@@ -32,6 +32,15 @@ const translations: Record<Language, Record<string, string>> = {
     'demo_mode': 'Demo Mode: API Key Missing',
     'admin_user': 'Admin User',
 
+    // Network Telemetry (New)
+    'net_telemetry': 'Host Network Telemetry',
+    'latency': 'Latency (Ping)',
+    'bandwidth': 'Est. Bandwidth',
+    'connection_type': 'Conn. Type',
+    'online_status': 'Network Status',
+    'connected': 'Connected',
+    'disconnected': 'Disconnected',
+
     // Login
     'login_title': 'Secure Login',
     'login_subtitle': 'Sudan Cyber Defense Command',
@@ -138,6 +147,7 @@ const translations: Record<Language, Record<string, string>> = {
     'hospital_option': 'Hospital Infrastructure (Sudan - Khartoum)',
     'airport_option': 'International Airport (Network Segment A)',
     'bank_option': 'Central Bank (Payment Gateway)',
+    'local_network_option': 'Local Network (Host Device Scan)',
     'start_scan': 'Start Assessment',
     'scanning': 'Scanning...',
     'report_generated': 'Assessment Report Generated',
@@ -148,6 +158,18 @@ const translations: Record<Language, Record<string, string>> = {
     'upload_label': 'Upload Wireshark Log / Network Scan (.txt, .log, .csv)',
     'analyze_file': 'Analyze File for Vulnerabilities',
     'analyzing_file': 'Analyzing File...',
+    
+    // Local Network Scanner
+    'net_monitor': 'Network Traffic Monitor',
+    'device_discovery': 'Discovered Devices (ARP/LAN)',
+    'packet_rate': 'Packets/sec',
+    'scanning_network': 'Scanning Local Subnet...',
+    'device_name': 'Device Name',
+    'ip_address': 'IP Address',
+    'mac_address': 'MAC Address',
+    'status_active': 'Active',
+    'this_device': 'This Device',
+    'gateway': 'Gateway',
 
     // About
     'university': 'International University of Africa',
@@ -188,6 +210,15 @@ const translations: Record<Language, Record<string, string>> = {
     'subtitle': 'نظام الدفاع السيبراني للبنى التحتية الحرجة في السودان',
     'demo_mode': 'وضع تجريبي: مفتاح API مفقود',
     'admin_user': 'مدير النظام',
+
+    // Network Telemetry (New)
+    'net_telemetry': 'قياسات الشبكة (الجهاز المضيف)',
+    'latency': 'زمن الاستجابة (Ping)',
+    'bandwidth': 'عرض النطاق التقديري',
+    'connection_type': 'نوع الاتصال',
+    'online_status': 'حالة الاتصال',
+    'connected': 'متصل',
+    'disconnected': 'غير متصل',
 
     // Login
     'login_title': 'تسجيل الدخول الآمن',
@@ -295,6 +326,7 @@ const translations: Record<Language, Record<string, string>> = {
     'hospital_option': 'البنية التحتية للمستشفى (السودان - الخرطوم)',
     'airport_option': 'المطار الدولي (قطاع الشبكة أ)',
     'bank_option': 'البنك المركزي (بوابة الدفع)',
+    'local_network_option': 'الشبكة المحلية (فحص الجهاز الحالي)',
     'start_scan': 'بدء التقييم',
     'scanning': 'جاري الفحص...',
     'report_generated': 'تم إنشاء تقرير التقييم',
@@ -305,6 +337,18 @@ const translations: Record<Language, Record<string, string>> = {
     'upload_label': 'رفع ملف Wireshark / سجل شبكة (.txt, .log, .csv)',
     'analyze_file': 'تحليل الملف للكشف عن الثغرات',
     'analyzing_file': 'جاري تحليل الملف...',
+
+    // Local Network Scanner
+    'net_monitor': 'مراقب حركة الشبكة',
+    'device_discovery': 'الأجهزة المكتشفة (ARP/LAN)',
+    'packet_rate': 'حزمة/ثانية',
+    'scanning_network': 'جاري فحص الشبكة المحلية...',
+    'device_name': 'اسم الجهاز',
+    'ip_address': 'عنوان IP',
+    'mac_address': 'عنوان MAC',
+    'status_active': 'نشط',
+    'this_device': 'هذا الجهاز',
+    'gateway': 'بوابة الشبكة',
 
     // About
     'university': 'جامعة إفريقيا العالمية',

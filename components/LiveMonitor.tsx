@@ -1,6 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LogEntry } from '../types';
-import { Terminal, Pause, Play, AlertTriangle, Lock } from 'lucide-react';
+import { Terminal, Pause, Play, AlertTriangle, Lock, Wifi, Activity, ArrowDown, Globe, Signal } from 'lucide-react';
 import { analyzeThreat } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -18,9 +18,17 @@ export const LiveMonitor: React.FC = () => {
   const [analysis, setAnalysis] = useState<string>('');
   const [analyzing, setAnalyzing] = useState(false);
 
+  // Network Telemetry State
+  const [netStats, setNetStats] = useState({
+    ping: 0,
+    downlink: 0,
+    effectiveType: 'unknown',
+    isOnline: true
+  });
+
   const isViewer = currentUser?.role === 'VIEWER';
 
-  // Simulation Data
+  // Simulation Data for IDS logs
   const sources = ['192.168.1.105', '10.0.0.5', '45.33.22.11', '172.16.0.4', '203.0.113.45'];
   const destinations = ['192.168.1.1 (Gateway)', '10.2.4.5 (DB_Server)', '10.2.4.6 (Web_App)'];
   const messages = [
@@ -33,6 +41,52 @@ export const LiveMonitor: React.FC = () => {
     { msg: 'Port Scan Detected (TCP SYN)', severity: 'WARNING', target: 'Hospital' },
     { msg: 'Valid User Login: admin', severity: 'INFO', target: 'Bank' },
   ];
+
+  // Logic to measure "Real" Ping to a reliable source
+  const measurePing = async () => {
+    const start = performance.now();
+    try {
+        // Fetching own page header or a small resource to test latency
+        await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+        const end = performance.now();
+        return Math.round(end - start);
+    } catch (e) {
+        return 999;
+    }
+  };
+
+  useEffect(() => {
+    // Initial Check
+    if ('connection' in navigator) {
+        // Cast to any to access connection properties which are not in standard TS types yet
+        const conn = (navigator as any).connection;
+        setNetStats(prev => ({
+            ...prev,
+            downlink: conn.downlink || 0,
+            effectiveType: conn.effectiveType || 'unknown'
+        }));
+        
+        // Listen for changes
+        conn.addEventListener('change', () => {
+             setNetStats(prev => ({
+                ...prev,
+                downlink: conn.downlink,
+                effectiveType: conn.effectiveType
+            }));
+        });
+    }
+
+    const interval = setInterval(async () => {
+        const ping = await measurePing();
+        setNetStats(prev => ({
+            ...prev,
+            ping: ping,
+            isOnline: navigator.onLine
+        }));
+    }, 2000);
+
+    return () => clearInterval(interval);
+  }, []);
 
   useEffect(() => {
     if (isPaused) return;
@@ -72,94 +126,148 @@ export const LiveMonitor: React.FC = () => {
     }
 
     setAnalyzing(true);
-    // Pass current language to the service
     const result = await analyzeThreat(log.message, log.target, language);
     setAnalysis(result);
     setAnalyzing(false);
   };
 
   return (
-    <div className="flex h-[calc(100vh-8rem)] gap-4">
-      {/* Terminal View */}
-      <div className="flex-1 flex flex-col theme-bg-card rounded-lg shadow-2xl overflow-hidden border theme-border">
-        <div className="theme-bg-input p-3 flex justify-between items-center border-b theme-border">
-          <div className="flex items-center gap-2 theme-text-accent" dir="ltr">
-            <Terminal size={18} />
-            <span className="font-mono text-sm font-bold">{t('terminal_title')}</span>
-          </div>
-          <button 
-            onClick={() => setIsPaused(!isPaused)}
-            className="theme-text-muted hover:theme-text-main transition-colors"
-          >
-            {isPaused ? <Play size={18} /> : <Pause size={18} />}
-          </button>
-        </div>
+    <div className="flex flex-col h-[calc(100vh-8rem)] gap-4">
         
-        <div 
-          ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1"
-          style={{ backgroundColor: currentTheme.colors.bgInput }}
-          dir="ltr" 
-        >
-          {logs.map((log) => (
-            <div 
-              key={log.id} 
-              className={`grid grid-cols-12 gap-2 p-1 hover:bg-white/5 cursor-pointer rounded ${log.id === selectedLog?.id ? 'bg-white/10 ring-1 ring-[var(--accent)]' : ''}`}
-              onClick={() => handleAnalyze(log)}
-            >
-              <span className="col-span-2 theme-text-muted">{log.timestamp.split('T')[1].split('.')[0]}</span>
-              <span className={`col-span-1 font-bold ${log.severity === 'CRITICAL' ? 'text-red-500' : log.severity === 'WARNING' ? 'text-yellow-500' : 'theme-text-accent'}`}>
-                [{log.severity}]
-              </span>
-              <span className="col-span-2 text-purple-400">{log.sourceIp}</span>
-              <span className="col-span-1 theme-text-muted">→</span>
-              <span className="col-span-2 text-cyan-400">{log.target}</span>
-              <span className="col-span-4 theme-text-main truncate">{log.message}</span>
+      {/* Real-time Telemetry Panel (New Addition) */}
+      <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-2">
+        <div className="theme-bg-card p-4 rounded-lg border theme-border flex items-center justify-between shadow-lg">
+            <div>
+                <div className="text-xs theme-text-muted uppercase font-bold">{t('online_status')}</div>
+                <div className={`text-lg font-bold flex items-center gap-2 ${netStats.isOnline ? 'text-green-400' : 'text-red-500'}`}>
+                    <Globe size={18} />
+                    {netStats.isOnline ? t('connected') : t('disconnected')}
+                </div>
             </div>
-          ))}
-          {logs.length === 0 && <div className="theme-text-muted italic">{t('waiting_traffic')}</div>}
+            <div className={`w-2 h-2 rounded-full ${netStats.isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+        </div>
+
+        <div className="theme-bg-card p-4 rounded-lg border theme-border flex items-center justify-between shadow-lg">
+            <div>
+                <div className="text-xs theme-text-muted uppercase font-bold">{t('latency')}</div>
+                <div className={`text-lg font-bold flex items-center gap-2 ${netStats.ping < 100 ? 'theme-text-accent' : 'text-yellow-500'}`}>
+                    <Activity size={18} />
+                    {netStats.ping} ms
+                </div>
+            </div>
+             <div className="h-full flex items-end">
+                <div className="flex gap-1 items-end h-6">
+                    <div className="w-1 bg-slate-700 h-2"></div>
+                    <div className="w-1 bg-slate-700 h-3"></div>
+                    <div className={`w-1 h-5 ${netStats.ping < 100 ? 'bg-[var(--accent)]' : 'bg-yellow-500'}`}></div>
+                </div>
+             </div>
+        </div>
+
+        <div className="theme-bg-card p-4 rounded-lg border theme-border flex items-center justify-between shadow-lg">
+            <div>
+                <div className="text-xs theme-text-muted uppercase font-bold">{t('bandwidth')}</div>
+                <div className="text-lg font-bold flex items-center gap-2 text-cyan-400">
+                    <ArrowDown size={18} />
+                    {netStats.downlink} Mbps
+                </div>
+            </div>
+        </div>
+
+        <div className="theme-bg-card p-4 rounded-lg border theme-border flex items-center justify-between shadow-lg">
+            <div>
+                <div className="text-xs theme-text-muted uppercase font-bold">{t('connection_type')}</div>
+                <div className="text-lg font-bold flex items-center gap-2 text-purple-400">
+                    <Signal size={18} />
+                    {netStats.effectiveType.toUpperCase()}
+                </div>
+            </div>
+            <Wifi className="text-slate-600" size={24} />
         </div>
       </div>
 
-      {/* AI Analysis Side Panel */}
-      <div className="w-1/3 theme-bg-card rounded-lg border theme-border flex flex-col">
-        <div className="p-4 border-b theme-border theme-bg-input flex justify-between items-center">
-          <h3 className="text-lg font-bold theme-text-main flex items-center gap-2">
-            <span className="text-xl">✨</span> {t('ai_analysis_panel')}
-          </h3>
-          {isViewer && (
-            <span className="text-xs theme-bg-input theme-text-muted px-2 py-1 rounded flex items-center gap-1">
-                <Lock size={10} />
-                {t('viewer_mode')}
-            </span>
-          )}
-        </div>
-        <div className="p-6 flex-1 overflow-y-auto">
-          {!selectedLog ? (
-             <div className="h-full flex flex-col items-center justify-center theme-text-muted">
-               <AlertTriangle size={48} className="mb-4 opacity-50" />
-               <p className="text-center">{t('select_log')}</p>
-             </div>
-          ) : (
-            <div className="space-y-4">
-              <div className="p-3 theme-bg-input rounded border theme-border font-mono text-xs theme-text-main" dir="ltr">
-                <p>{t('target')}: {selectedLog.target}</p>
-                <p>{t('payload')}: {selectedLog.message}</p>
-              </div>
-              
-              {analyzing ? (
-                <div className="flex items-center gap-2 theme-text-accent animate-pulse">
-                  <span>{t('analyzing')}</span>
-                </div>
-              ) : (
-                <div className={`prose prose-sm ${currentTheme.type === 'dark' ? 'prose-invert' : ''} ${isViewer ? 'theme-text-muted italic' : 'theme-text-main'}`}>
-                   <div className="whitespace-pre-wrap leading-relaxed">
-                    {analysis}
-                   </div>
-                </div>
-              )}
+      <div className="flex flex-1 gap-4 overflow-hidden">
+        {/* Terminal View */}
+        <div className="flex-1 flex flex-col theme-bg-card rounded-lg shadow-2xl overflow-hidden border theme-border">
+            <div className="theme-bg-input p-3 flex justify-between items-center border-b theme-border">
+            <div className="flex items-center gap-2 theme-text-accent" dir="ltr">
+                <Terminal size={18} />
+                <span className="font-mono text-sm font-bold">{t('terminal_title')}</span>
             </div>
-          )}
+            <button 
+                onClick={() => setIsPaused(!isPaused)}
+                className="theme-text-muted hover:theme-text-main transition-colors"
+            >
+                {isPaused ? <Play size={18} /> : <Pause size={18} />}
+            </button>
+            </div>
+            
+            <div 
+            ref={scrollRef}
+            className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1"
+            style={{ backgroundColor: currentTheme.colors.bgInput }}
+            dir="ltr" 
+            >
+            {logs.map((log) => (
+                <div 
+                key={log.id} 
+                className={`grid grid-cols-12 gap-2 p-1 hover:bg-white/5 cursor-pointer rounded ${log.id === selectedLog?.id ? 'bg-white/10 ring-1 ring-[var(--accent)]' : ''}`}
+                onClick={() => handleAnalyze(log)}
+                >
+                <span className="col-span-2 theme-text-muted">{log.timestamp.split('T')[1].split('.')[0]}</span>
+                <span className={`col-span-1 font-bold ${log.severity === 'CRITICAL' ? 'text-red-500' : log.severity === 'WARNING' ? 'text-yellow-500' : 'theme-text-accent'}`}>
+                    [{log.severity}]
+                </span>
+                <span className="col-span-2 text-purple-400">{log.sourceIp}</span>
+                <span className="col-span-1 theme-text-muted">→</span>
+                <span className="col-span-2 text-cyan-400">{log.target}</span>
+                <span className="col-span-4 theme-text-main truncate">{log.message}</span>
+                </div>
+            ))}
+            {logs.length === 0 && <div className="theme-text-muted italic">{t('waiting_traffic')}</div>}
+            </div>
+        </div>
+
+        {/* AI Analysis Side Panel */}
+        <div className="w-1/3 theme-bg-card rounded-lg border theme-border flex flex-col">
+            <div className="p-4 border-b theme-border theme-bg-input flex justify-between items-center">
+            <h3 className="text-lg font-bold theme-text-main flex items-center gap-2">
+                <span className="text-xl">✨</span> {t('ai_analysis_panel')}
+            </h3>
+            {isViewer && (
+                <span className="text-xs theme-bg-input theme-text-muted px-2 py-1 rounded flex items-center gap-1">
+                    <Lock size={10} />
+                    {t('viewer_mode')}
+                </span>
+            )}
+            </div>
+            <div className="p-6 flex-1 overflow-y-auto">
+            {!selectedLog ? (
+                <div className="h-full flex flex-col items-center justify-center theme-text-muted">
+                <AlertTriangle size={48} className="mb-4 opacity-50" />
+                <p className="text-center">{t('select_log')}</p>
+                </div>
+            ) : (
+                <div className="space-y-4">
+                <div className="p-3 theme-bg-input rounded border theme-border font-mono text-xs theme-text-main" dir="ltr">
+                    <p>{t('target')}: {selectedLog.target}</p>
+                    <p>{t('payload')}: {selectedLog.message}</p>
+                </div>
+                
+                {analyzing ? (
+                    <div className="flex items-center gap-2 theme-text-accent animate-pulse">
+                    <span>{t('analyzing')}</span>
+                    </div>
+                ) : (
+                    <div className={`prose prose-sm ${currentTheme.type === 'dark' ? 'prose-invert' : ''} ${isViewer ? 'theme-text-muted italic' : 'theme-text-main'}`}>
+                    <div className="whitespace-pre-wrap leading-relaxed">
+                        {analysis}
+                    </div>
+                    </div>
+                )}
+                </div>
+            )}
+            </div>
         </div>
       </div>
     </div>
