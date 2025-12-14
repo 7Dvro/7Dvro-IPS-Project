@@ -8,6 +8,30 @@ const getClient = () => {
   return new GoogleGenAI({ apiKey });
 };
 
+// Common instruction to append to prompts to get JSON data
+const JSON_STATS_INSTRUCTION = `
+  CRITICAL: At the very end of your response, you MUST append a JSON block inside \`\`\`json\`\`\` code fences. 
+  This JSON must strictly follow this format to update the dashboard charts:
+  {
+    "attack_vectors": {
+      "SQL Injection": number,
+      "DDoS": number,
+      "Brute Force": number,
+      "Malware": number,
+      "Phishing": number,
+      "Other": number
+    },
+    "traffic_stats": {
+      "HTTP/HTTPS": number,
+      "TCP": number,
+      "UDP": number,
+      "DNS": number,
+      "ICMP": number
+    }
+  }
+  Estimate these numbers based on the severity and volume of issues found in the analyzed data.
+`;
+
 export const analyzeThreat = async (logMessage: string, context: string, lang: 'en' | 'ar' = 'en'): Promise<string> => {
   try {
     const ai = getClient();
@@ -45,6 +69,8 @@ export const generateSecurityReport = async (infrastructureType: string, lang: '
       Include 3 critical vulnerabilities often found in legacy systems (e.g., outdated Windows, unpatched servers, weak encryption).
       Suggest fix for each.
       Keep it professional and technical. Max 200 words.
+
+      ${JSON_STATS_INSTRUCTION}
     `;
 
     const response = await ai.models.generateContent({
@@ -79,6 +105,8 @@ export const analyzeTrafficBatch = async (trafficData: string, lang: 'en' | 'ar'
       4. **Strategic Recommendations**: Actionable steps for the SOC team.
       
       The report should be professional and use technical cybersecurity terminology appropriate for the language.
+
+      ${JSON_STATS_INSTRUCTION}
     `;
 
     const response = await ai.models.generateContent({
@@ -115,6 +143,8 @@ export const analyzeVulnerabilityLogFile = async (fileData: string, lang: 'en' |
       4. **Remediation**: Steps to patch or harden the identified systems.
 
       Format as clean Markdown.
+
+      ${JSON_STATS_INSTRUCTION}
     `;
 
     const response = await ai.models.generateContent({

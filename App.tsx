@@ -5,19 +5,33 @@ import { LiveMonitor } from './components/LiveMonitor';
 import { VulnerabilityScanner } from './components/VulnerabilityScanner';
 import { TrafficAnalyzer } from './components/TrafficAnalyzer';
 import { About } from './components/About';
+import { Profile } from './components/Profile';
+import { Login } from './components/Login';
 import { ViewState, SystemStatus } from './types';
-import { Bell, Globe } from 'lucide-react';
+import { Bell, Globe, Palette, X } from 'lucide-react';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
+import { DashboardProvider } from './contexts/DashboardContext';
+import { SessionProvider } from './contexts/SessionContext';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { useTheme } from './contexts/ThemeContext';
 
 function AppContent() {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
   const { t, language, setLanguage, dir } = useLanguage();
+  const { isAuthenticated, currentUser } = useAuth();
+  const { currentTheme, setTheme, themes } = useTheme();
+  
+  const [showThemeSelector, setShowThemeSelector] = useState(false);
   
   const [systems] = useState<SystemStatus[]>([
     { name: 'Khartoum Airport', status: 'SECURE', uptime: '99.98%', threatLevel: 12 },
     { name: 'Omdurman Hospital', status: 'VULNERABLE', uptime: '98.50%', threatLevel: 45 },
     { name: 'Bank of Khartoum (Sim)', status: 'UNDER_ATTACK', uptime: '92.10%', threatLevel: 88 },
   ]);
+
+  if (!isAuthenticated) {
+    return <Login />;
+  }
 
   const renderContent = () => {
     switch (currentView) {
@@ -31,6 +45,8 @@ function AppContent() {
         return <VulnerabilityScanner />;
       case ViewState.PROPOSAL_DOC:
         return <About />;
+      case ViewState.PROFILE:
+        return <Profile />;
       default:
         return <Dashboard systems={systems} />;
     }
@@ -43,50 +59,87 @@ function AppContent() {
       case ViewState.TRAFFIC_ANALYSIS: return t('batch_forensics');
       case ViewState.VULNERABILITY_SCAN: return t('vuln_assessment');
       case ViewState.PROPOSAL_DOC: return t('project_doc');
+      case ViewState.PROFILE: return t('profile_title');
       default: return t('operational_overview');
     }
   };
 
   return (
-    <div className="min-h-screen bg-[#0f172a] text-slate-200 font-sans" dir={dir}>
+    <div className="min-h-screen theme-bg-app theme-text-main font-sans transition-colors duration-300" dir={dir}>
       <Sidebar currentView={currentView} onNavigate={setCurrentView} />
       
       <main className={`p-8 min-h-screen transition-all ${dir === 'rtl' ? 'mr-64' : 'ml-64'}`}>
         {/* Top Header Bar */}
-        <div className="flex justify-between items-center mb-8">
+        <div className="flex justify-between items-center mb-8 no-print relative">
           <div>
-            <h2 className="text-2xl font-bold text-white">
+            <h2 className="text-2xl font-bold theme-text-main tracking-tight">
               {getTitle()}
             </h2>
-            <p className="text-slate-400 text-sm">{t('subtitle')}</p>
+            <p className="theme-text-muted text-sm">{t('subtitle')}</p>
           </div>
           
           <div className="flex items-center gap-4">
-             {/* Fake API Key Warning if not present */}
+             {/* Fake API Key Warning */}
              {!process.env.API_KEY && (
-               <div className="bg-red-500/20 text-red-300 text-xs px-3 py-1 rounded border border-red-500/30">
+               <div className="bg-red-500/20 text-red-500 text-xs px-3 py-1 rounded border border-red-500/30 font-bold">
                  {t('demo_mode')}
                </div>
              )}
             
+            {/* Theme Toggle */}
+            <div className="relative">
+                <button 
+                  onClick={() => setShowThemeSelector(!showThemeSelector)}
+                  className="p-2 rounded theme-bg-card theme-text-muted hover:theme-text-accent border theme-border transition-colors"
+                  title="Change Theme"
+                >
+                    <Palette size={18} />
+                </button>
+
+                {showThemeSelector && (
+                    <div className="absolute top-12 right-0 z-50 p-4 rounded-lg theme-bg-card theme-border border shadow-2xl w-64 animate-fade-in glass-effect">
+                        <div className="flex justify-between items-center mb-3">
+                            <span className="text-xs font-bold theme-text-main uppercase">Select Theme</span>
+                            <button onClick={() => setShowThemeSelector(false)}><X size={14} className="theme-text-muted" /></button>
+                        </div>
+                        <div className="grid grid-cols-3 gap-3">
+                            {themes.map(theme => (
+                                <button
+                                    key={theme.id}
+                                    onClick={() => setTheme(theme.id)}
+                                    className={`w-full aspect-square rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110 ${currentTheme.id === theme.id ? 'border-[var(--accent)]' : 'border-transparent'}`}
+                                    style={{ backgroundColor: theme.colors.bgApp }}
+                                    title={theme.name}
+                                >
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.colors.accent }}></div>
+                                </button>
+                            ))}
+                        </div>
+                        <div className="mt-3 text-center">
+                            <span className="text-[10px] theme-text-muted">{currentTheme.name}</span>
+                        </div>
+                    </div>
+                )}
+            </div>
+
             {/* Language Switcher */}
             <button 
               onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-              className="flex items-center gap-2 px-3 py-2 bg-slate-800 rounded border border-slate-700 hover:bg-slate-700 text-slate-300 text-xs font-bold transition-colors"
+              className="flex items-center gap-2 px-3 py-2 theme-bg-card rounded border theme-border hover:opacity-80 theme-text-main text-xs font-bold transition-all"
             >
               <Globe size={16} />
               {language === 'ar' ? 'English' : 'العربية'}
             </button>
 
-            <button className="relative p-2 text-slate-400 hover:text-white transition-colors">
+            <button className="relative p-2 theme-text-muted hover:theme-text-main transition-colors">
               <Bell size={20} />
-              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full"></span>
+              <span className="absolute top-1 right-1 w-2 h-2 bg-red-500 rounded-full animate-pulse"></span>
             </button>
-            <div className="flex items-center gap-2">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-tr from-blue-500 to-purple-600 flex items-center justify-center text-xs font-bold text-white">
-                AD
+            <div className="flex items-center gap-2 theme-bg-card py-1 px-3 rounded-full border theme-border">
+              <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg" style={{ background: 'var(--accent)' }}>
+                {currentUser?.avatar}
               </div>
-              <span className="text-sm font-medium">{t('admin_user')}</span>
+              <span className="text-xs font-bold theme-text-main">{currentUser?.name}</span>
             </div>
           </div>
         </div>
@@ -100,8 +153,14 @@ function AppContent() {
 
 export default function App() {
   return (
-    <LanguageProvider>
-      <AppContent />
-    </LanguageProvider>
+    <AuthProvider>
+      <DashboardProvider>
+        <SessionProvider>
+          <LanguageProvider>
+            <AppContent />
+          </LanguageProvider>
+        </SessionProvider>
+      </DashboardProvider>
+    </AuthProvider>
   );
 }

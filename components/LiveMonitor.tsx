@@ -1,17 +1,24 @@
 import React, { useEffect, useRef, useState } from 'react';
 import { LogEntry } from '../types';
-import { Terminal, Pause, Play, AlertTriangle } from 'lucide-react';
+import { Terminal, Pause, Play, AlertTriangle, Lock } from 'lucide-react';
 import { analyzeThreat } from '../services/geminiService';
 import { useLanguage } from '../contexts/LanguageContext';
+import { useAuth } from '../contexts/AuthContext';
+import { useTheme } from '../contexts/ThemeContext';
 
 export const LiveMonitor: React.FC = () => {
   const { t, language } = useLanguage();
+  const { currentUser } = useAuth();
+  const { currentTheme } = useTheme();
+  
   const [logs, setLogs] = useState<LogEntry[]>([]);
   const [isPaused, setIsPaused] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
   const [selectedLog, setSelectedLog] = useState<LogEntry | null>(null);
   const [analysis, setAnalysis] = useState<string>('');
   const [analyzing, setAnalyzing] = useState(false);
+
+  const isViewer = currentUser?.role === 'VIEWER';
 
   // Simulation Data
   const sources = ['192.168.1.105', '10.0.0.5', '45.33.22.11', '172.16.0.4', '203.0.113.45'];
@@ -57,9 +64,14 @@ export const LiveMonitor: React.FC = () => {
 
   const handleAnalyze = async (log: LogEntry) => {
     setSelectedLog(log);
-    setAnalyzing(true);
     setAnalysis('');
     
+    if (isViewer) {
+        setAnalysis(t('viewer_action_restricted'));
+        return;
+    }
+
+    setAnalyzing(true);
     // Pass current language to the service
     const result = await analyzeThreat(log.message, log.target, language);
     setAnalysis(result);
@@ -69,15 +81,15 @@ export const LiveMonitor: React.FC = () => {
   return (
     <div className="flex h-[calc(100vh-8rem)] gap-4">
       {/* Terminal View */}
-      <div className="flex-1 flex flex-col bg-slate-900 rounded-lg border border-slate-700 overflow-hidden shadow-2xl">
-        <div className="bg-slate-800 p-3 flex justify-between items-center border-b border-slate-700">
-          <div className="flex items-center gap-2 text-green-400" dir="ltr">
+      <div className="flex-1 flex flex-col theme-bg-card rounded-lg shadow-2xl overflow-hidden border theme-border">
+        <div className="theme-bg-input p-3 flex justify-between items-center border-b theme-border">
+          <div className="flex items-center gap-2 theme-text-accent" dir="ltr">
             <Terminal size={18} />
             <span className="font-mono text-sm font-bold">{t('terminal_title')}</span>
           </div>
           <button 
             onClick={() => setIsPaused(!isPaused)}
-            className="text-slate-300 hover:text-white transition-colors"
+            className="theme-text-muted hover:theme-text-main transition-colors"
           >
             {isPaused ? <Play size={18} /> : <Pause size={18} />}
           </button>
@@ -85,56 +97,63 @@ export const LiveMonitor: React.FC = () => {
         
         <div 
           ref={scrollRef}
-          className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1 bg-[#0c0c0c]"
+          className="flex-1 overflow-y-auto p-4 font-mono text-xs space-y-1"
+          style={{ backgroundColor: currentTheme.colors.bgInput }}
           dir="ltr" 
         >
           {logs.map((log) => (
             <div 
               key={log.id} 
-              className={`grid grid-cols-12 gap-2 p-1 hover:bg-slate-800 cursor-pointer rounded ${log.id === selectedLog?.id ? 'bg-slate-800 ring-1 ring-blue-500' : ''}`}
+              className={`grid grid-cols-12 gap-2 p-1 hover:bg-white/5 cursor-pointer rounded ${log.id === selectedLog?.id ? 'bg-white/10 ring-1 ring-[var(--accent)]' : ''}`}
               onClick={() => handleAnalyze(log)}
             >
-              <span className="col-span-2 text-slate-500">{log.timestamp.split('T')[1].split('.')[0]}</span>
-              <span className={`col-span-1 font-bold ${log.severity === 'CRITICAL' ? 'text-red-500' : log.severity === 'WARNING' ? 'text-yellow-500' : 'text-blue-400'}`}>
+              <span className="col-span-2 theme-text-muted">{log.timestamp.split('T')[1].split('.')[0]}</span>
+              <span className={`col-span-1 font-bold ${log.severity === 'CRITICAL' ? 'text-red-500' : log.severity === 'WARNING' ? 'text-yellow-500' : 'theme-text-accent'}`}>
                 [{log.severity}]
               </span>
               <span className="col-span-2 text-purple-400">{log.sourceIp}</span>
-              <span className="col-span-1 text-slate-400">→</span>
+              <span className="col-span-1 theme-text-muted">→</span>
               <span className="col-span-2 text-cyan-400">{log.target}</span>
-              <span className="col-span-4 text-slate-300 truncate">{log.message}</span>
+              <span className="col-span-4 theme-text-main truncate">{log.message}</span>
             </div>
           ))}
-          {logs.length === 0 && <div className="text-slate-600 italic">{t('waiting_traffic')}</div>}
+          {logs.length === 0 && <div className="theme-text-muted italic">{t('waiting_traffic')}</div>}
         </div>
       </div>
 
       {/* AI Analysis Side Panel */}
-      <div className="w-1/3 bg-slate-800 rounded-lg border border-slate-700 flex flex-col">
-        <div className="p-4 border-b border-slate-700 bg-slate-800">
-          <h3 className="text-lg font-bold text-white flex items-center gap-2">
+      <div className="w-1/3 theme-bg-card rounded-lg border theme-border flex flex-col">
+        <div className="p-4 border-b theme-border theme-bg-input flex justify-between items-center">
+          <h3 className="text-lg font-bold theme-text-main flex items-center gap-2">
             <span className="text-xl">✨</span> {t('ai_analysis_panel')}
           </h3>
+          {isViewer && (
+            <span className="text-xs theme-bg-input theme-text-muted px-2 py-1 rounded flex items-center gap-1">
+                <Lock size={10} />
+                {t('viewer_mode')}
+            </span>
+          )}
         </div>
         <div className="p-6 flex-1 overflow-y-auto">
           {!selectedLog ? (
-             <div className="h-full flex flex-col items-center justify-center text-slate-500">
+             <div className="h-full flex flex-col items-center justify-center theme-text-muted">
                <AlertTriangle size={48} className="mb-4 opacity-50" />
                <p className="text-center">{t('select_log')}</p>
              </div>
           ) : (
             <div className="space-y-4">
-              <div className="p-3 bg-slate-900 rounded border border-slate-700 font-mono text-xs text-slate-300" dir="ltr">
+              <div className="p-3 theme-bg-input rounded border theme-border font-mono text-xs theme-text-main" dir="ltr">
                 <p>{t('target')}: {selectedLog.target}</p>
                 <p>{t('payload')}: {selectedLog.message}</p>
               </div>
               
               {analyzing ? (
-                <div className="flex items-center gap-2 text-blue-400 animate-pulse">
+                <div className="flex items-center gap-2 theme-text-accent animate-pulse">
                   <span>{t('analyzing')}</span>
                 </div>
               ) : (
-                <div className="prose prose-invert prose-sm">
-                   <div className="whitespace-pre-wrap text-slate-200 leading-relaxed">
+                <div className={`prose prose-sm ${currentTheme.type === 'dark' ? 'prose-invert' : ''} ${isViewer ? 'theme-text-muted italic' : 'theme-text-main'}`}>
+                   <div className="whitespace-pre-wrap leading-relaxed">
                     {analysis}
                    </div>
                 </div>

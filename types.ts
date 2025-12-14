@@ -4,7 +4,31 @@ export enum ViewState {
   VULNERABILITY_SCAN = 'VULNERABILITY_SCAN',
   TRAFFIC_ANALYSIS = 'TRAFFIC_ANALYSIS',
   AI_ADVISOR = 'AI_ADVISOR',
-  PROPOSAL_DOC = 'PROPOSAL_DOC'
+  PROPOSAL_DOC = 'PROPOSAL_DOC',
+  PROFILE = 'PROFILE'
+}
+
+export type UserRole = 'ADMIN' | 'ANALYST' | 'VIEWER';
+
+export interface User {
+  id: string;
+  name: string;
+  email: string;
+  password?: string; // Only used for verification/creation, not stored in plain text in real app (simulated here)
+  role: UserRole;
+  avatar?: string; // Can be Initials (string) or Base64 Image URL
+  department?: string;
+  isCustomAvatar?: boolean;
+}
+
+export interface UserActivityLog {
+  id: string;
+  userId: string;
+  userName: string;
+  action: string; // e.g., 'LOGIN', 'SCAN_STARTED', 'USER_ADDED'
+  details: string;
+  timestamp: string;
+  ip: string; // Simulated
 }
 
 export interface LogEntry {

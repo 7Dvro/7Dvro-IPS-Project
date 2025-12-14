@@ -7,28 +7,100 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
     <style>
+      :root {
+        /* Default Variables - Will be overridden by JS */
+        --bg-app: #0f172a;
+        --bg-sidebar: #020617;
+        --bg-card: #1e293b;
+        --bg-input: #0f172a;
+        --text-main: #f1f5f9;
+        --text-muted: #94a3b8;
+        --accent: #3b82f6;
+        --accent-glow: rgba(59, 130, 246, 0.5);
+        --border: #334155;
+      }
+
       body {
         font-family: 'Inter', sans-serif;
-        background-color: #0f172a; /* Slate 900 */
-        color: #e2e8f0; /* Slate 200 */
+        background-color: var(--bg-app);
+        color: var(--text-main);
+        transition: background-color 0.3s ease, color 0.3s ease;
       }
+
       .font-mono {
         font-family: 'JetBrains Mono', monospace;
       }
-      /* Custom scrollbar for dark theme */
+
+      /* Theme Utility Classes */
+      .theme-bg-app { background-color: var(--bg-app); }
+      .theme-bg-sidebar { background-color: var(--bg-sidebar); border-right: 1px solid var(--border); }
+      .theme-bg-card { background-color: var(--bg-card); border: 1px solid var(--border); box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06); }
+      .theme-bg-input { background-color: var(--bg-input); border: 1px solid var(--border); color: var(--text-main); }
+      .theme-text-main { color: var(--text-main); }
+      .theme-text-muted { color: var(--text-muted); }
+      .theme-text-accent { color: var(--accent); }
+      .theme-border { border-color: var(--border); }
+      .theme-ring-focus:focus { outline: none; box-shadow: 0 0 0 2px var(--accent); border-color: transparent; }
+      
+      .theme-btn-primary {
+        background-color: var(--accent);
+        color: white; /* Always white for contrast on accent */
+        box-shadow: 0 0 15px var(--accent-glow);
+        transition: all 0.2s;
+      }
+      .theme-btn-primary:hover {
+        opacity: 0.9;
+        transform: translateY(-1px);
+      }
+
+      .glass-effect {
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
+      }
+
+      /* RTL Support helpers */
+      [dir="rtl"] .theme-bg-sidebar { border-right: none; border-left: 1px solid var(--border); }
+
+      /* Custom scrollbar */
       ::-webkit-scrollbar {
         width: 8px;
         height: 8px;
       }
       ::-webkit-scrollbar-track {
-        background: #1e293b; 
+        background: var(--bg-app); 
       }
       ::-webkit-scrollbar-thumb {
-        background: #475569; 
+        background: var(--border); 
         border-radius: 4px;
       }
       ::-webkit-scrollbar-thumb:hover {
-        background: #64748b; 
+        background: var(--text-muted); 
+      }
+
+      /* Animation */
+      @keyframes fadeIn {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
+      }
+      .animate-fade-in {
+        animation: fadeIn 0.4s ease-out forwards;
+      }
+
+      /* Print Styles */
+      @media print {
+        @page { margin: 1.5cm; size: A4 portrait; }
+        body { 
+          background-color: white !important; 
+          color: black !important; 
+        }
+        .no-print, nav, aside, button, .sidebar, header { display: none !important; }
+        .theme-bg-card { border: 1px solid #ccc !important; box-shadow: none !important; background: none !important; }
+        .theme-text-main, .theme-text-muted { color: black !important; }
+        #root, main { width: 100% !important; margin: 0 !important; padding: 0 !important; }
+        .grid, .flex { display: block !important; }
+        .h-\[600px\], .min-h-screen, .h-screen { height: auto !important; }
+        .overflow-hidden, .overflow-y-auto { overflow: visible !important; height: auto !important; }
+        .w-full { width: 100% !important; }
       }
     </style>
   <script type="importmap">
