@@ -345,7 +345,7 @@ export const Profile: React.FC = () => {
         <>
             {/* User Management */}
             <div className="bg-slate-800 rounded-lg border border-slate-700 overflow-hidden relative">
-                <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/50">
+                <div className="p-6 border-b border-slate-700 bg-slate-900/50 flex flex-col md:flex-row justify-between items-center gap-4">
                     <h2 className="text-xl font-bold text-white flex items-center gap-2">
                         <Shield className="text-purple-500" />
                         {t('user_management')}
@@ -361,97 +361,112 @@ export const Profile: React.FC = () => {
 
                 {/* EDIT USER MODAL OVERLAY */}
                 {editingUser && editFormData && (
-                    <div className="absolute inset-0 z-20 bg-slate-900/95 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
-                        <div className="bg-slate-800 border border-slate-600 rounded-lg p-6 w-full max-w-lg shadow-2xl">
-                             <div className="flex justify-between items-center mb-6">
-                                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                                    <Edit2 size={18} className="text-blue-400"/>
+                    <div className="fixed inset-0 z-[100] bg-black/80 backdrop-blur-sm flex items-center justify-center p-4 animate-fade-in">
+                        <div className="bg-slate-800 border border-slate-600 rounded-lg w-full max-w-2xl shadow-2xl flex flex-col max-h-[90vh] overflow-hidden">
+                             <div className="p-6 border-b border-slate-700 flex justify-between items-center bg-slate-900/80">
+                                <h3 className="text-xl font-bold text-white flex items-center gap-3">
+                                    <div className="p-2 bg-blue-500/20 rounded-lg">
+                                        <Edit2 size={24} className="text-blue-400"/>
+                                    </div>
                                     {t('edit_user')}
                                 </h3>
-                                <button onClick={() => setEditingUser(null)} className="text-slate-400 hover:text-white">
-                                    <X size={20} />
+                                <button 
+                                    onClick={() => setEditingUser(null)} 
+                                    className="p-2 hover:bg-white/10 rounded-full text-slate-400 hover:text-white transition-colors"
+                                >
+                                    <X size={24} />
                                 </button>
                              </div>
 
-                             <form onSubmit={handleSaveEdit} className="space-y-4">
-                                <div className="flex justify-center mb-4">
-                                    <div className="w-20 h-20 rounded-full border-2 border-slate-500 overflow-hidden relative group">
-                                         {editFormData.avatar && editFormData.avatar.startsWith('data') ? (
-                                            <img src={editFormData.avatar} alt="Avatar" className="w-full h-full object-cover" />
-                                         ) : (
-                                            <div className="w-full h-full bg-slate-700 flex items-center justify-center text-xl font-bold">{editFormData.avatar?.substring(0,2).toUpperCase()}</div>
-                                         )}
-                                          <label className="absolute inset-0 bg-black/50 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
-                                            <Camera className="text-white" size={16} />
-                                            <input type="file" className="hidden" accept="image/*" onChange={handleEditAvatarUpload} />
-                                         </label>
+                             <div className="p-6 overflow-y-auto custom-scrollbar">
+                                <form onSubmit={handleSaveEdit} className="space-y-6">
+                                    <div className="flex justify-center mb-6">
+                                        <div className="w-28 h-28 rounded-full border-4 border-slate-600 overflow-hidden relative group shadow-xl">
+                                             {editFormData.avatar && editFormData.avatar.startsWith('data') ? (
+                                                <img src={editFormData.avatar} alt="Avatar" className="w-full h-full object-cover" />
+                                             ) : (
+                                                <div className="w-full h-full bg-slate-700 flex items-center justify-center text-3xl font-bold text-slate-300">
+                                                    {editFormData.avatar?.substring(0,2).toUpperCase()}
+                                                </div>
+                                             )}
+                                              <label className="absolute inset-0 bg-black/60 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer">
+                                                <Camera className="text-white scale-125" />
+                                                <input type="file" className="hidden" accept="image/*" onChange={handleEditAvatarUpload} />
+                                             </label>
+                                        </div>
                                     </div>
-                                </div>
 
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs text-slate-400">{t('full_name')}</label>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                        <div className="space-y-2">
+                                            <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">{t('full_name')}</label>
+                                            <input 
+                                                type="text" 
+                                                required
+                                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                                value={editFormData.name}
+                                                onChange={e => setEditFormData({...editFormData!, name: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">{t('email_label')}</label>
+                                            <input 
+                                                type="email" 
+                                                required
+                                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                                value={editFormData.email}
+                                                onChange={e => setEditFormData({...editFormData!, email: e.target.value})}
+                                            />
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">{t('role')}</label>
+                                            <div className="relative">
+                                                <select
+                                                    className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none appearance-none transition-all"
+                                                    value={editFormData.role}
+                                                    onChange={e => setEditFormData({...editFormData!, role: e.target.value as UserRole})}
+                                                >
+                                                    <option value="ANALYST">Analyst</option>
+                                                    <option value="VIEWER">Viewer</option>
+                                                    <option value="ADMIN">Admin</option>
+                                                </select>
+                                                <div className="absolute right-3 top-3.5 pointer-events-none text-slate-500">
+                                                    <Briefcase size={16} />
+                                                </div>
+                                            </div>
+                                        </div>
+                                        <div className="space-y-2">
+                                            <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">{t('department')}</label>
+                                            <input 
+                                                type="text" 
+                                                className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all"
+                                                value={editFormData.department}
+                                                onChange={e => setEditFormData({...editFormData!, department: e.target.value})}
+                                            />
+                                        </div>
+                                    </div>
+                                    
+                                    <div className="space-y-2 border-t border-slate-700/50 pt-4">
+                                        <label className="text-xs text-slate-400 uppercase font-bold tracking-wider ml-1">{t('password_label')}</label>
                                         <input 
-                                            type="text" 
-                                            required
-                                            className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:ring-1 focus:ring-blue-500 outline-none"
-                                            value={editFormData.name}
-                                            onChange={e => setEditFormData({...editFormData, name: e.target.value})}
+                                            type="password" 
+                                            placeholder={t('leave_blank_pass')}
+                                            className="w-full bg-slate-900 border border-slate-700 rounded-lg p-3 text-white focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none transition-all placeholder:text-slate-600"
+                                            value={editFormData.password}
+                                            onChange={e => setEditFormData({...editFormData!, password: e.target.value})}
                                         />
                                     </div>
-                                    <div>
-                                        <label className="text-xs text-slate-400">{t('email_label')}</label>
-                                        <input 
-                                            type="email" 
-                                            required
-                                            className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:ring-1 focus:ring-blue-500 outline-none"
-                                            value={editFormData.email}
-                                            onChange={e => setEditFormData({...editFormData, email: e.target.value})}
-                                        />
+                                    
+                                    <div className="flex gap-4 pt-4 border-t border-slate-700/50 mt-4">
+                                        <button type="button" onClick={() => setEditingUser(null)} className="flex-1 py-3 bg-slate-700 hover:bg-slate-600 rounded-lg text-slate-300 text-sm font-bold transition-colors">
+                                            {t('cancel')}
+                                        </button>
+                                        <button type="submit" className="flex-1 py-3 bg-blue-600 hover:bg-blue-500 rounded-lg text-white text-sm font-bold flex items-center justify-center gap-2 shadow-lg shadow-blue-500/20 transition-all hover:scale-[1.02]">
+                                            <Save size={18} />
+                                            {t('save_changes')}
+                                        </button>
                                     </div>
-                                </div>
-                                <div className="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label className="text-xs text-slate-400">{t('role')}</label>
-                                        <select
-                                            className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:ring-1 focus:ring-blue-500 outline-none"
-                                            value={editFormData.role}
-                                            onChange={e => setEditFormData({...editFormData, role: e.target.value as UserRole})}
-                                        >
-                                            <option value="ANALYST">Analyst</option>
-                                            <option value="VIEWER">Viewer</option>
-                                            <option value="ADMIN">Admin</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label className="text-xs text-slate-400">{t('department')}</label>
-                                        <input 
-                                            type="text" 
-                                            className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:ring-1 focus:ring-blue-500 outline-none"
-                                            value={editFormData.department}
-                                            onChange={e => setEditFormData({...editFormData, department: e.target.value})}
-                                        />
-                                    </div>
-                                </div>
-                                <div>
-                                    <label className="text-xs text-slate-400">{t('password_label')}</label>
-                                    <input 
-                                        type="password" 
-                                        placeholder={t('leave_blank_pass')}
-                                        className="w-full bg-slate-900 border border-slate-700 rounded p-2 text-white focus:ring-1 focus:ring-blue-500 outline-none"
-                                        value={editFormData.password}
-                                        onChange={e => setEditFormData({...editFormData, password: e.target.value})}
-                                    />
-                                </div>
-                                
-                                <div className="flex gap-3 pt-2">
-                                    <button type="button" onClick={() => setEditingUser(null)} className="flex-1 py-2 bg-slate-700 hover:bg-slate-600 rounded text-slate-300 text-sm font-bold">{t('cancel')}</button>
-                                    <button type="submit" className="flex-1 py-2 bg-blue-600 hover:bg-blue-500 rounded text-white text-sm font-bold flex items-center justify-center gap-2">
-                                        <Save size={16} />
-                                        {t('save_changes')}
-                                    </button>
-                                </div>
-                             </form>
+                                 </form>
+                             </div>
                         </div>
                     </div>
                 )}

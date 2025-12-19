@@ -20,11 +20,24 @@
         --border: #334155;
       }
 
+      html, body {
+        height: 100%;
+        width: 100%;
+        margin: 0;
+        padding: 0;
+        overflow: hidden; /* Prevent body scroll, let App handle it */
+      }
+
       body {
         font-family: 'Inter', sans-serif;
         background-color: var(--bg-app);
         color: var(--text-main);
         transition: background-color 0.3s ease, color 0.3s ease;
+      }
+      
+      #root {
+        height: 100%;
+        width: 100%;
       }
 
       .font-mono {

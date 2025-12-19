@@ -1,9 +1,11 @@
+
 import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
 import { LiveMonitor } from './components/LiveMonitor';
 import { VulnerabilityScanner } from './components/VulnerabilityScanner';
 import { TrafficAnalyzer } from './components/TrafficAnalyzer';
+import { MalwareScanner } from './components/MalwareScanner';
 import { About } from './components/About';
 import { Profile } from './components/Profile';
 import { Login } from './components/Login';
@@ -34,22 +36,16 @@ function AppContent() {
   }
 
   const renderContent = () => {
-    switch (currentView) {
-      case ViewState.DASHBOARD:
-        return <Dashboard systems={systems} />;
-      case ViewState.LIVE_MONITOR:
-        return <LiveMonitor />;
-      case ViewState.TRAFFIC_ANALYSIS:
-        return <TrafficAnalyzer />;
-      case ViewState.VULNERABILITY_SCAN:
-        return <VulnerabilityScanner />;
-      case ViewState.PROPOSAL_DOC:
-        return <About />;
-      case ViewState.PROFILE:
-        return <Profile />;
-      default:
-        return <Dashboard systems={systems} />;
-    }
+    // تم تعديل المنطق هنا لضمان مطابقة دقيقة لحالة العرض
+    if (currentView === ViewState.DASHBOARD) return <Dashboard systems={systems} />;
+    if (currentView === ViewState.LIVE_MONITOR) return <LiveMonitor />;
+    if (currentView === ViewState.TRAFFIC_ANALYSIS) return <TrafficAnalyzer />;
+    if (currentView === ViewState.VULNERABILITY_SCAN) return <VulnerabilityScanner />;
+    if (currentView === ViewState.MALWARE_SCANNER) return <MalwareScanner />;
+    if (currentView === ViewState.PROPOSAL_DOC) return <About />;
+    if (currentView === ViewState.PROFILE) return <Profile />;
+    
+    return <Dashboard systems={systems} />;
   };
 
   const getTitle = () => {
@@ -58,6 +54,7 @@ function AppContent() {
       case ViewState.LIVE_MONITOR: return t('realtime_intrusion');
       case ViewState.TRAFFIC_ANALYSIS: return t('batch_forensics');
       case ViewState.VULNERABILITY_SCAN: return t('vuln_assessment');
+      case ViewState.MALWARE_SCANNER: return t('malware_analysis_title');
       case ViewState.PROPOSAL_DOC: return t('project_doc');
       case ViewState.PROFILE: return t('profile_title');
       default: return t('operational_overview');
@@ -65,11 +62,10 @@ function AppContent() {
   };
 
   return (
-    <div className="min-h-screen theme-bg-app theme-text-main font-sans transition-colors duration-300" dir={dir}>
+    <div className="flex h-screen w-screen overflow-hidden theme-bg-app theme-text-main font-sans transition-colors duration-300" dir={dir}>
       <Sidebar currentView={currentView} onNavigate={setCurrentView} />
       
-      <main className={`p-8 min-h-screen transition-all ${dir === 'rtl' ? 'mr-64' : 'ml-64'}`}>
-        {/* Top Header Bar */}
+      <main className="flex-1 h-full overflow-y-auto overflow-x-hidden p-8 relative scroll-smooth">
         <div className="flex justify-between items-center mb-8 no-print relative">
           <div>
             <h2 className="text-2xl font-bold theme-text-main tracking-tight">
@@ -79,19 +75,16 @@ function AppContent() {
           </div>
           
           <div className="flex items-center gap-4">
-             {/* Fake API Key Warning */}
              {!process.env.API_KEY && (
                <div className="bg-red-500/20 text-red-500 text-xs px-3 py-1 rounded border border-red-500/30 font-bold">
                  {t('demo_mode')}
                </div>
              )}
             
-            {/* Theme Toggle */}
             <div className="relative">
                 <button 
                   onClick={() => setShowThemeSelector(!showThemeSelector)}
                   className="p-2 rounded theme-bg-card theme-text-muted hover:theme-text-accent border theme-border transition-colors"
-                  title="Change Theme"
                 >
                     <Palette size={18} />
                 </button>
@@ -109,20 +102,15 @@ function AppContent() {
                                     onClick={() => setTheme(theme.id)}
                                     className={`w-full aspect-square rounded-full border-2 flex items-center justify-center transition-transform hover:scale-110 ${currentTheme.id === theme.id ? 'border-[var(--accent)]' : 'border-transparent'}`}
                                     style={{ backgroundColor: theme.colors.bgApp }}
-                                    title={theme.name}
                                 >
                                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: theme.colors.accent }}></div>
                                 </button>
                             ))}
                         </div>
-                        <div className="mt-3 text-center">
-                            <span className="text-[10px] theme-text-muted">{currentTheme.name}</span>
-                        </div>
                     </div>
                 )}
             </div>
 
-            {/* Language Switcher */}
             <button 
               onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
               className="flex items-center gap-2 px-3 py-2 theme-bg-card rounded border theme-border hover:opacity-80 theme-text-main text-xs font-bold transition-all"
@@ -137,14 +125,13 @@ function AppContent() {
             </button>
             <div className="flex items-center gap-2 theme-bg-card py-1 px-3 rounded-full border theme-border">
               <div className="w-6 h-6 rounded-full flex items-center justify-center text-xs font-bold text-white shadow-lg" style={{ background: 'var(--accent)' }}>
-                {currentUser?.avatar}
+                {currentUser?.avatar || 'U'}
               </div>
               <span className="text-xs font-bold theme-text-main">{currentUser?.name}</span>
             </div>
           </div>
         </div>
 
-        {/* Dynamic Content */}
         {renderContent()}
       </main>
     </div>

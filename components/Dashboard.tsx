@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { SystemStatus } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
-import { ShieldCheck, ShieldAlert, Activity, Server, Cpu, HardDrive, Monitor, Globe, Clock, Zap } from 'lucide-react';
+import { ShieldCheck, ShieldAlert, Activity, Server, Cpu, HardDrive, Monitor, Globe, Clock, Zap, Wifi, Signal, ArrowDown } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDashboard } from '../contexts/DashboardContext';
 import { useAuth } from '../contexts/AuthContext';
@@ -22,7 +22,16 @@ export const Dashboard: React.FC<DashboardProps> = ({ systems: initialSystems })
       os: 'Unknown',
       browser: 'Unknown',
       screen: 'Unknown',
-      cores: 2
+      cores: 2,
+      publicIp: 'Loading...'
+  });
+
+  // Real Network Stats (Telemetry)
+  const [netStats, setNetStats] = useState({
+    ping: 0,
+    downlink: 0,
+    effectiveType: 'unknown',
+    isOnline: true
   });
 
   // Resource Simulation
@@ -35,7 +44,27 @@ export const Dashboard: React.FC<DashboardProps> = ({ systems: initialSystems })
   // Dynamic System Status
   const [dynamicSystems, setDynamicSystems] = useState(initialSystems);
 
+  // Measure Ping Logic
+  const measurePing = async () => {
+    const start = performance.now();
+    try {
+        await fetch(window.location.href, { method: 'HEAD', cache: 'no-store' });
+        const end = performance.now();
+        return Math.round(end - start);
+    } catch (e) {
+        return 999;
+    }
+  };
+
   useEffect(() => {
+    // Get Real Public IP
+    fetch('https://ipapi.co/json/')
+        .then(res => res.json())
+        .then(data => {
+             setHostInfo(prev => ({ ...prev, publicIp: data.ip || 'Unknown' }));
+        })
+        .catch(() => setHostInfo(prev => ({ ...prev, publicIp: 'Hidden/Local' })));
+
     // Get Real Host Info
     const userAgent = window.navigator.userAgent;
     let os = "Unknown OS";
@@ -45,12 +74,39 @@ export const Dashboard: React.FC<DashboardProps> = ({ systems: initialSystems })
     if (userAgent.indexOf("Android") !== -1) os = "Android";
     if (userAgent.indexOf("like Mac") !== -1) os = "iOS";
 
-    setHostInfo({
+    setHostInfo(prev => ({
+        ...prev,
         os: os,
         browser: navigator.userAgent.split(') ')[1]?.split(' ')[0] || 'Modern Browser',
         screen: `${window.screen.width} x ${window.screen.height}`,
         cores: navigator.hardwareConcurrency || 4
-    });
+    }));
+
+    // Network Stats Update Loop
+    if ('connection' in navigator) {
+        const conn = (navigator as any).connection;
+        setNetStats(prev => ({
+            ...prev,
+            downlink: conn.downlink || 0,
+            effectiveType: conn.effectiveType || 'unknown'
+        }));
+        conn.addEventListener('change', () => {
+             setNetStats(prev => ({
+                ...prev,
+                downlink: conn.downlink,
+                effectiveType: conn.effectiveType
+            }));
+        });
+    }
+
+    const netInterval = setInterval(async () => {
+        const ping = await measurePing();
+        setNetStats(prev => ({
+            ...prev,
+            ping: ping,
+            isOnline: navigator.onLine
+        }));
+    }, 2000);
 
     // Simulate Resource Usage Fluctuation
     const resourceInterval = setInterval(() => {
@@ -74,6 +130,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ systems: initialSystems })
     return () => {
         clearInterval(resourceInterval);
         clearInterval(sysInterval);
+        clearInterval(netInterval);
     };
   }, []);
 
@@ -125,7 +182,7 @@ export const Dashboard: React.FC<DashboardProps> = ({ systems: initialSystems })
               <div className="grid grid-cols-2 gap-4">
                   {[
                       { icon: Monitor, label: t('os_platform'), value: hostInfo.os, color: 'text-blue-400', bg: 'bg-blue-500/10' },
-                      { icon: Globe, label: t('browser_agent'), value: hostInfo.browser, color: 'text-purple-400', bg: 'bg-purple-500/10' },
+                      { icon: Globe, label: 'Public IP', value: hostInfo.publicIp, color: 'text-purple-400', bg: 'bg-purple-500/10' },
                       { icon: Monitor, label: t('screen_res'), value: hostInfo.screen, color: 'text-green-400', bg: 'bg-green-500/10' },
                       { icon: Cpu, label: t('logical_cores'), value: `${hostInfo.cores} Cores`, color: 'text-orange-400', bg: 'bg-orange-500/10' }
                   ].map((item, i) => (
@@ -154,6 +211,59 @@ export const Dashboard: React.FC<DashboardProps> = ({ systems: initialSystems })
           </div>
       </div>
 
+      {/* ROW 1.5: Real-time Device Network Status (NEW) */}
+      <div className="theme-bg-card rounded-lg p-4 shadow-lg border-l-4 border-l-[var(--accent)] border theme-border">
+          <h3 className="text-sm font-bold theme-text-main mb-3 flex items-center gap-2">
+              <Wifi size={16} className="theme-text-accent" />
+              {t('real_network_monitor')}
+          </h3>
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+               {/* Online Status */}
+               <div className="theme-bg-input p-3 rounded border theme-border flex items-center justify-between">
+                  <div>
+                      <div className="text-[10px] theme-text-muted uppercase font-bold">{t('online_status')}</div>
+                      <div className={`text-sm font-bold flex items-center gap-1 ${netStats.isOnline ? 'text-green-400' : 'text-red-500'}`}>
+                          {netStats.isOnline ? t('connected') : t('disconnected')}
+                      </div>
+                  </div>
+                  <div className={`w-2 h-2 rounded-full ${netStats.isOnline ? 'bg-green-500 animate-pulse' : 'bg-red-500'}`}></div>
+               </div>
+
+               {/* Latency */}
+               <div className="theme-bg-input p-3 rounded border theme-border flex items-center justify-between">
+                  <div>
+                      <div className="text-[10px] theme-text-muted uppercase font-bold">{t('latency')}</div>
+                      <div className={`text-sm font-bold flex items-center gap-1 ${netStats.ping < 100 ? 'theme-text-accent' : 'text-yellow-500'}`}>
+                          {netStats.ping} ms
+                      </div>
+                  </div>
+                  <Activity size={16} className="text-slate-600" />
+               </div>
+
+               {/* Bandwidth */}
+               <div className="theme-bg-input p-3 rounded border theme-border flex items-center justify-between">
+                  <div>
+                      <div className="text-[10px] theme-text-muted uppercase font-bold">{t('bandwidth')}</div>
+                      <div className="text-sm font-bold flex items-center gap-1 text-cyan-400">
+                          {netStats.downlink} Mbps
+                      </div>
+                  </div>
+                  <ArrowDown size={16} className="text-slate-600" />
+               </div>
+
+               {/* Type */}
+               <div className="theme-bg-input p-3 rounded border theme-border flex items-center justify-between">
+                  <div>
+                      <div className="text-[10px] theme-text-muted uppercase font-bold">{t('connection_type')}</div>
+                      <div className="text-sm font-bold flex items-center gap-1 text-purple-400">
+                          {netStats.effectiveType.toUpperCase()}
+                      </div>
+                  </div>
+                  <Signal size={16} className="text-slate-600" />
+               </div>
+          </div>
+      </div>
+
       {/* ROW 2: Infrastructure Status (Dynamic) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         {dynamicSystems.map((sys) => (
@@ -179,9 +289,9 @@ export const Dashboard: React.FC<DashboardProps> = ({ systems: initialSystems })
                   <span>{t('threat_level')}</span>
                   <span className={`${sys.threatLevel > 70 ? 'text-red-400 font-bold' : 'theme-text-muted'}`}>{sys.threatLevel}%</span>
                 </div>
-                <div className="w-full bg-black/20 rounded-full h-1.5 border theme-border">
+                <div className="w-full bg-black/20 rounded-full h-2">
                   <div 
-                    className={`h-1.5 rounded-full transition-all duration-1000 ${sys.threatLevel > 70 ? 'bg-red-500 shadow-[0_0_10px_rgba(239,68,68,0.5)]' : sys.threatLevel > 40 ? 'bg-yellow-500' : 'bg-green-500'}`} 
+                    className={`h-full rounded-full transition-all duration-1000 ${sys.threatLevel > 70 ? 'bg-red-500' : sys.threatLevel > 30 ? 'bg-yellow-500' : 'bg-green-500'}`} 
                     style={{ width: `${sys.threatLevel}%` }}
                   ></div>
                 </div>
@@ -193,105 +303,103 @@ export const Dashboard: React.FC<DashboardProps> = ({ systems: initialSystems })
 
       {/* ROW 3: Charts */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        <div className="theme-bg-card p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg font-bold theme-text-main mb-4 flex items-center gap-2">
-            <Activity size={18} className="theme-text-accent" />
-            {t('attack_vector_dist')}
-          </h3>
-          <div className="h-64">
-             <ResponsiveContainer width="100%" height="100%">
+         {/* Attack Vectors Bar Chart */}
+         <div className="theme-bg-card p-6 rounded-lg shadow-lg border theme-border">
+            <h3 className="text-lg font-bold theme-text-main mb-6">{t('attack_vector_dist')}</h3>
+            <div className="h-[300px] w-full">
+              <ResponsiveContainer width="100%" height="100%">
                 <BarChart data={attackVectorData}>
                   <CartesianGrid strokeDasharray="3 3" stroke={currentTheme.colors.border} vertical={false} />
-                  <XAxis dataKey="name" stroke={currentTheme.colors.textMuted} fontSize={11} tickLine={false} axisLine={false} />
-                  <YAxis stroke={currentTheme.colors.textMuted} fontSize={11} tickLine={false} axisLine={false} />
+                  <XAxis dataKey="name" stroke={currentTheme.colors.textMuted} fontSize={12} tickLine={false} axisLine={false} />
+                  <YAxis stroke={currentTheme.colors.textMuted} fontSize={12} tickLine={false} axisLine={false} />
                   <Tooltip 
-                    cursor={{fill: currentTheme.colors.border, opacity: 0.2}}
-                    contentStyle={{ backgroundColor: currentTheme.colors.bgCard, borderColor: currentTheme.colors.border, color: currentTheme.colors.textMain, borderRadius: '8px' }}
+                    cursor={{fill: 'transparent'}}
+                    contentStyle={{ backgroundColor: currentTheme.colors.bgCard, borderColor: currentTheme.colors.border, color: currentTheme.colors.textMain }}
                     itemStyle={{ color: currentTheme.colors.textMain }}
                   />
-                  <Bar dataKey="count" fill={currentTheme.colors.accent} radius={[4, 4, 0, 0]} barSize={40}>
-                    {attackVectorData.map((entry, index) => (
-                         <Cell key={`cell-${index}`} fill={entry.count > 100 ? '#ef4444' : currentTheme.colors.chartColors[index % 5]} />
-                    ))}
-                  </Bar>
+                  <Bar dataKey="count" fill={currentTheme.colors.accent} radius={[4, 4, 0, 0]} barSize={40} />
                 </BarChart>
-             </ResponsiveContainer>
-          </div>
-        </div>
+              </ResponsiveContainer>
+            </div>
+         </div>
 
-        <div className="theme-bg-card p-6 rounded-lg shadow-lg">
-          <h3 className="text-lg font-bold theme-text-main mb-4 flex items-center gap-2">
-            <Globe size={18} className="text-purple-400" />
-            {t('traffic_analysis_chart')}
-          </h3>
-          <div className="h-64 flex items-center justify-center">
-             <ResponsiveContainer width="100%" height="100%">
-              <PieChart>
-                <Pie
-                  data={trafficStatsData}
-                  cx="50%"
-                  cy="50%"
-                  innerRadius={60}
-                  outerRadius={90}
-                  paddingAngle={4}
-                  dataKey="count"
-                  stroke="none"
-                >
-                  {trafficStatsData.map((entry, index) => (
-                    <Cell key={`cell-${index}`} fill={currentTheme.colors.chartColors[index % currentTheme.colors.chartColors.length]} />
-                  ))}
-                </Pie>
-                <Tooltip 
-                   contentStyle={{ backgroundColor: currentTheme.colors.bgCard, borderColor: currentTheme.colors.border, color: currentTheme.colors.textMain, borderRadius: '8px' }}
-                />
-              </PieChart>
-             </ResponsiveContainer>
-          </div>
-        </div>
+         {/* Traffic Stats Pie Chart */}
+         <div className="theme-bg-card p-6 rounded-lg shadow-lg border theme-border">
+            <h3 className="text-lg font-bold theme-text-main mb-6">{t('traffic_analysis_chart')}</h3>
+            <div className="h-[300px] w-full flex items-center justify-center">
+               <ResponsiveContainer width="100%" height="100%">
+                 <PieChart>
+                    <Pie
+                      data={trafficStatsData}
+                      cx="50%"
+                      cy="50%"
+                      innerRadius={60}
+                      outerRadius={100}
+                      paddingAngle={5}
+                      dataKey="count"
+                    >
+                      {trafficStatsData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={currentTheme.colors.chartColors[index % currentTheme.colors.chartColors.length]} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                        contentStyle={{ backgroundColor: currentTheme.colors.bgCard, borderColor: currentTheme.colors.border, borderRadius: '8px' }}
+                        itemStyle={{ color: currentTheme.colors.textMain }}
+                    />
+                 </PieChart>
+               </ResponsiveContainer>
+            </div>
+            <div className="flex flex-wrap justify-center gap-4 mt-4">
+                {trafficStatsData.map((entry, index) => (
+                    <div key={entry.name} className="flex items-center gap-2 text-xs theme-text-muted">
+                        <div className="w-3 h-3 rounded-full" style={{ backgroundColor: currentTheme.colors.chartColors[index % currentTheme.colors.chartColors.length] }}></div>
+                        {entry.name}
+                    </div>
+                ))}
+            </div>
+         </div>
       </div>
 
-      {/* ROW 4: Real Activity Logs */}
-      <div className="theme-bg-card rounded-lg shadow-lg overflow-hidden">
-          <div className="p-4 theme-bg-input border-b theme-border flex justify-between items-center">
-              <h3 className="text-lg font-bold theme-text-main flex items-center gap-2">
-                  <Clock size={18} className="theme-text-muted" />
-                  {t('recent_system_activity')}
-              </h3>
-              <div className="flex items-center gap-2 px-2 py-1 rounded bg-green-500/10 border border-green-500/20">
-                  <span className="w-2 h-2 rounded-full bg-green-500 animate-pulse"></span>
-                  <span className="text-[10px] text-green-400 font-bold uppercase">Live Feed</span>
-              </div>
-          </div>
-          <div className="divide-y theme-border">
-              {activityLogs.slice(0, 5).map(log => (
-                  <div key={log.id} className="p-4 flex items-center justify-between hover:bg-white/5 transition-colors">
-                      <div className="flex items-center gap-4">
-                           <div className={`w-8 h-8 rounded-full flex items-center justify-center font-bold text-xs 
-                                ${log.action.includes('LOGIN') ? 'bg-blue-500/20 text-blue-400' : 
-                                  log.action.includes('SCAN') ? 'bg-orange-500/20 text-orange-400' :
-                                  log.action.includes('DELETE') ? 'bg-red-500/20 text-red-400' :
-                                  'theme-bg-input theme-text-muted'
-                                }`}>
-                                {log.action.substring(0,1)}
-                           </div>
-                           <div>
-                               <div className="text-sm font-bold theme-text-main">{log.action.replace('_', ' ')}</div>
-                               <div className="text-xs theme-text-muted">{log.details} - by <span className="theme-text-accent">{log.userName}</span></div>
-                           </div>
-                      </div>
-                      <div className="text-xs font-mono theme-text-muted text-right">
-                          {new Date(log.timestamp).toLocaleTimeString()}
-                          <div className="text-[10px] opacity-50">{new Date(log.timestamp).toLocaleDateString()}</div>
-                      </div>
-                  </div>
-              ))}
-              {activityLogs.length === 0 && (
-                  <div className="p-8 text-center theme-text-muted text-sm italic">
-                      No recent activity recorded in current session.
-                  </div>
-              )}
-          </div>
+      {/* ROW 4: System Logs / Activity */}
+      <div className="theme-bg-card rounded-lg border theme-border overflow-hidden">
+           <div className="p-4 border-b theme-border bg-slate-900/10">
+               <h3 className="font-bold theme-text-main text-sm uppercase tracking-wider">{t('recent_system_activity')}</h3>
+           </div>
+           <div className="max-h-[300px] overflow-y-auto">
+               <table className="w-full text-left" dir={t('dir') as string}>
+                   <thead className="theme-bg-input theme-text-muted text-xs uppercase font-medium sticky top-0">
+                       <tr>
+                           <th className="px-6 py-3">{t('user')}</th>
+                           <th className="px-6 py-3">{t('action')}</th>
+                           <th className="px-6 py-3">{t('details')}</th>
+                           <th className="px-6 py-3 text-right">{t('timestamp')}</th>
+                       </tr>
+                   </thead>
+                   <tbody className="divide-y theme-border theme-bg-card">
+                       {activityLogs.slice(0, 10).map((log) => (
+                          <tr key={log.id} className="hover:bg-white/5 transition-colors">
+                              <td className="px-6 py-3 theme-text-main font-medium text-xs">
+                                  {log.userName}
+                              </td>
+                              <td className="px-6 py-3">
+                                  <span className={`px-2 py-1 rounded text-xs font-mono 
+                                      ${log.action.includes('DELETE') || log.action.includes('BLOCK') ? 'bg-red-500/20 text-red-400' : 
+                                        log.action.includes('ADD') || log.action.includes('LOGIN') ? 'bg-green-500/20 text-green-400' : 
+                                        'theme-bg-input theme-text-accent'}`}>
+                                      {log.action}
+                                  </span>
+                              </td>
+                              <td className="px-6 py-3 theme-text-muted text-xs">{log.details}</td>
+                              <td className="px-6 py-3 text-right theme-text-muted text-xs font-mono">
+                                  {new Date(log.timestamp).toLocaleString()}
+                              </td>
+                          </tr>
+                       ))}
+                   </tbody>
+               </table>
+           </div>
       </div>
+
     </div>
   );
 };

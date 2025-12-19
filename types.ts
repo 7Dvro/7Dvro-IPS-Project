@@ -1,8 +1,10 @@
+
 export enum ViewState {
   DASHBOARD = 'DASHBOARD',
   LIVE_MONITOR = 'LIVE_MONITOR',
   VULNERABILITY_SCAN = 'VULNERABILITY_SCAN',
   TRAFFIC_ANALYSIS = 'TRAFFIC_ANALYSIS',
+  MALWARE_SCANNER = 'MALWARE_SCANNER',
   AI_ADVISOR = 'AI_ADVISOR',
   PROPOSAL_DOC = 'PROPOSAL_DOC',
   PROFILE = 'PROFILE'
@@ -14,9 +16,9 @@ export interface User {
   id: string;
   name: string;
   email: string;
-  password?: string; // Only used for verification/creation, not stored in plain text in real app (simulated here)
+  password?: string; 
   role: UserRole;
-  avatar?: string; // Can be Initials (string) or Base64 Image URL
+  avatar?: string; 
   department?: string;
   isCustomAvatar?: boolean;
 }
@@ -25,10 +27,10 @@ export interface UserActivityLog {
   id: string;
   userId: string;
   userName: string;
-  action: string; // e.g., 'LOGIN', 'SCAN_STARTED', 'USER_ADDED'
+  action: string; 
   details: string;
   timestamp: string;
-  ip: string; // Simulated
+  ip: string; 
 }
 
 export interface LogEntry {
@@ -36,7 +38,7 @@ export interface LogEntry {
   timestamp: string;
   sourceIp: string;
   destIp: string;
-  protocol: 'TCP' | 'UDP' | 'ICMP' | 'HTTP';
+  protocol: 'TCP' | 'UDP' | 'ICMP' | 'HTTP' | 'HTTPS' | 'HTTP/API' | 'ERR' | 'TLSv1.3' | 'TLSv1.2' | 'SSHv2' | 'QUIC' | 'ARP' | 'ICMPv6' | 'HTTP/JSON';
   severity: 'INFO' | 'WARNING' | 'CRITICAL';
   message: string;
   target: 'Airport' | 'Hospital' | 'Bank' | 'General';
@@ -46,7 +48,7 @@ export interface SystemStatus {
   name: string;
   status: 'SECURE' | 'UNDER_ATTACK' | 'VULNERABLE';
   uptime: string;
-  threatLevel: number; // 0-100
+  threatLevel: number; 
 }
 
 export interface Vulnerability {

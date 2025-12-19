@@ -1,4 +1,5 @@
-import { GoogleGenAI } from "@google/genai";
+
+import { GoogleGenAI, Type } from "@google/genai";
 
 const getClient = () => {
   const apiKey = process.env.API_KEY;
@@ -11,150 +12,91 @@ const getClient = () => {
 // Common instruction to append to prompts to get JSON data
 const JSON_STATS_INSTRUCTION = `
   CRITICAL: At the very end of your response, you MUST append a JSON block inside \`\`\`json\`\`\` code fences. 
-  This JSON must strictly follow this format to update the dashboard charts:
+  This JSON must strictly follow this format:
   {
-    "attack_vectors": {
-      "SQL Injection": number,
-      "DDoS": number,
-      "Brute Force": number,
-      "Malware": number,
-      "Phishing": number,
-      "Other": number
-    },
-    "traffic_stats": {
-      "HTTP/HTTPS": number,
-      "TCP": number,
-      "UDP": number,
-      "DNS": number,
-      "ICMP": number
+    "scan_results": {
+        "verdict": "CLEAN" | "MALICIOUS" | "SUSPICIOUS",
+        "malware_family": "string",
+        "programming_language": "string",
+        "detection_ratio": "string (e.g. 45/72)",
+        "risk_score": number,
+        "summary_ar": "ملخص مختصر جدا بالعربية",
+        "summary_en": "Very brief summary in English",
+        "engines": [
+          {"name": "Kaspersky", "verdict": "Malicious/Clean", "detail": "Trojan.Win32.Generic"},
+          {"name": "CrowdStrike", "verdict": "Malicious/Clean", "detail": "Malicious_Behavior"},
+          {"name": "Microsoft", "verdict": "Malicious/Clean", "detail": "Backdoor:Win32/Zrev.A"},
+          {"name": "BitDefender", "verdict": "Malicious/Clean", "detail": "Gen:Variant.Razy.741"},
+          {"name": "SentinelOne", "verdict": "Malicious/Clean", "detail": "Static AI - Malicious"}
+        ]
     }
   }
-  Estimate these numbers based on the severity and volume of issues found in the analyzed data.
 `;
 
 export const analyzeThreat = async (logMessage: string, context: string, lang: 'en' | 'ar' = 'en'): Promise<string> => {
   try {
     const ai = getClient();
-    const prompt = `
-      You are a world-class cybersecurity analyst for Sudan's Critical Infrastructure Defense System.
-      Analyze the following threat log: "${logMessage}".
-      Context: This is affecting a ${context}.
-      
-      Provide a concise response (max 100 words) in ${lang === 'ar' ? 'Arabic' : 'English'} covering:
-      1. What type of attack is this?
-      2. The potential impact on the ${context}.
-      3. Immediate mitigation steps.
-      
-      Format the output in clean Markdown.
-    `;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-
+    const prompt = `Analyze this specific log entry: "${logMessage}". Context: ${context}. Output in ${lang === 'ar' ? 'Arabic' : 'English'}.`;
+    const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
     return response.text || "Analysis failed.";
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return lang === 'ar' ? "خطأ في الاتصال بمحرك التحليل. يرجى التحقق من مفتاح API." : "Error connecting to AI Analysis engine. Please check API Key.";
-  }
+  } catch (error) { return "Error."; }
 };
 
 export const generateSecurityReport = async (infrastructureType: string, lang: 'en' | 'ar' = 'en'): Promise<string> => {
    try {
     const ai = getClient();
-    const prompt = `
-      Generate a simulated vulnerability assessment report summary for a ${infrastructureType} in Sudan.
-      Output language: ${lang === 'ar' ? 'Arabic' : 'English'}.
-      Include 3 critical vulnerabilities often found in legacy systems (e.g., outdated Windows, unpatched servers, weak encryption).
-      Suggest fix for each.
-      Keep it professional and technical. Max 200 words.
-
-      ${JSON_STATS_INSTRUCTION}
-    `;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-
-    return response.text || "Report generation failed.";
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return lang === 'ar' ? "خطأ في إنشاء التقرير." : "Error generating report.";
-  }
+    const prompt = `Generate vulnerability report for: ${infrastructureType}. Output in ${lang === 'ar' ? 'Arabic' : 'English'}.`;
+    const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
+    return response.text || "Report failed.";
+  } catch (error) { return "Error."; }
 }
 
 export const analyzeTrafficBatch = async (trafficData: string, lang: 'en' | 'ar' = 'en'): Promise<string> => {
   try {
     const ai = getClient();
-    const prompt = `
-      You are an elite Senior Security Analyst for the National Cyber Defense Center.
-      Review the following batch of network traffic logs/data:
-      
-      """
-      ${trafficData}
-      """
-      
-      Analyze this data for anomalies, malicious patterns (DDoS, SQLi, Port Scanning, C2 Beaconing), and security hygiene issues.
-      
-      Produce a detailed "Traffic Analysis Report" in Markdown format in ${lang === 'ar' ? 'Arabic' : 'English'} with these sections:
-      1. **Executive Summary**: High-level verdict (Clean/Suspicious/Critical).
-      2. **Detected Anomalies**: List specific suspicious lines or patterns.
-      3. **Threat Classification**: Map to MITRE ATT&CK if possible.
-      4. **Strategic Recommendations**: Actionable steps for the SOC team.
-      
-      The report should be professional and use technical cybersecurity terminology appropriate for the language.
-
-      ${JSON_STATS_INSTRUCTION}
-    `;
-
-    const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
-      contents: prompt,
-    });
-
-    return response.text || "Batch analysis failed.";
-  } catch (error) {
-    console.error("Gemini API Error:", error);
-    return lang === 'ar' ? "خطأ في تحليل البيانات. يرجى التحقق من مفتاح API." : "Error analyzing traffic batch. Please check your API Key and connection.";
-  }
+    const prompt = `Analyze traffic: ${trafficData}. Output in ${lang === 'ar' ? 'Arabic' : 'English'}.`;
+    const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
+    return response.text || "Failed.";
+  } catch (error) { return "Error."; }
 };
 
 export const analyzeVulnerabilityLogFile = async (fileData: string, lang: 'en' | 'ar' = 'en'): Promise<string> => {
   try {
     const ai = getClient();
-    // Limit data to avoid token issues, assuming text logs
-    const snippet = fileData.substring(0, 50000); 
+    const prompt = `Analyze log: ${fileData}. Output in ${lang === 'ar' ? 'Arabic' : 'English'}.`;
+    const response = await ai.models.generateContent({ model: 'gemini-3-flash-preview', contents: prompt });
+    return response.text || "Failed.";
+  } catch (error) { return "Error."; }
+};
+
+export const analyzeMalwareFile = async (fileMetadata: any, hexSnippet: string, extractedStrings: string, lang: 'en' | 'ar' = 'en'): Promise<string> => {
+  try {
+    const ai = getClient();
     const prompt = `
-      You are a Vulnerability Assessment Expert utilizing data from Wireshark/Network Scanners.
-      Analyze the following imported log file content for potential security vulnerabilities, outdated software versions, weak ciphers, and unpatched systems.
-
-      """
-      ${snippet}
-      """
-
-      Output language: ${lang === 'ar' ? 'Arabic' : 'English'}.
+      Act as a Hybrid Analysis Sandbox and Multi-Engine Scanner (VirusTotal Style).
+      Perform a deep static and heuristic analysis on this file.
       
-      Produce a "Vulnerability Scan Report" containing:
-      1. **Detected Technologies**: OS, Services, Versions detected in headers/banners.
-      2. **Identified Vulnerabilities**: Potential CVEs or weak configurations based on the traffic.
-      3. **Risk Level**: High/Medium/Low with justification.
-      4. **Remediation**: Steps to patch or harden the identified systems.
+      File Metadata: ${JSON.stringify(fileMetadata)}
+      Binary Snippet: ${hexSnippet}
+      Extracted Strings: ${extractedStrings.substring(0, 10000)}
 
-      Format as clean Markdown.
-
+      YOUR GOAL:
+      1. Simulate how top antivirus engines would react to this file patterns.
+      2. Identify malicious indicators (C2 IPs, Obfuscation, Dangerous API Hooks).
+      3. Create a technical forensic report AND a brief executive summary.
+      
+      Output language for the main report: ${lang === 'ar' ? 'Arabic' : 'English'}.
       ${JSON_STATS_INSTRUCTION}
     `;
 
     const response = await ai.models.generateContent({
-      model: 'gemini-2.5-flash',
+      model: 'gemini-3-pro-preview',
       contents: prompt,
+      config: { thinkingConfig: { thinkingBudget: 4000 } }
     });
 
-    return response.text || "File analysis failed.";
+    return response.text || "Malware analysis failed.";
   } catch (error) {
-    console.error("Gemini API Error:", error);
-    return lang === 'ar' ? "خطأ في تحليل الملف." : "Error analyzing file.";
+     return lang === 'ar' ? "خطأ في فحص الملف." : "Error scanning file.";
   }
 };

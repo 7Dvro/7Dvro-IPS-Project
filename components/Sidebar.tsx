@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { ViewState } from '../types';
-import { LayoutDashboard, Activity, ScanLine, FileText, FileSearch, LogOut, Settings } from 'lucide-react';
+import { LayoutDashboard, Activity, ScanLine, FileText, FileSearch, LogOut, Settings, Bug } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -38,6 +39,12 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
         icon: ScanLine,
         allowedRoles: ['ADMIN', 'ANALYST'] 
     },
+    {
+        id: ViewState.MALWARE_SCANNER,
+        label: t('malware_scanner'),
+        icon: Bug,
+        allowedRoles: ['ADMIN', 'ANALYST']
+    },
     { 
         id: ViewState.PROPOSAL_DOC, 
         label: t('research_doc'), 
@@ -47,7 +54,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
   ];
 
   return (
-    <div className={`w-64 theme-bg-sidebar flex flex-col h-screen fixed top-0 no-print z-40 transition-colors duration-300 ${dir === 'rtl' ? 'right-0' : 'left-0'}`}>
+    <div className={`w-64 theme-bg-sidebar flex flex-col z-40 transition-colors duration-300 flex-shrink-0 h-full fixed md:relative ${dir === 'rtl' ? 'right-0 border-l' : 'left-0 border-r'} theme-border no-print`}>
       <div className="p-6 flex items-center gap-3 border-b theme-border">
         <div className="w-8 h-8 rounded-lg flex items-center justify-center shadow-lg theme-btn-primary">
           <ShieldIcon />
@@ -55,7 +62,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
         <h1 className="theme-text-main font-bold text-lg tracking-tight">CyberShield AI</h1>
       </div>
 
-      <nav className="flex-1 p-4 space-y-2 overflow-y-auto">
+      <nav className="flex-1 p-4 space-y-2 overflow-y-auto custom-scrollbar">
         {menuItems
           .filter(item => currentUser && item.allowedRoles.includes(currentUser.role))
           .map((item) => {
@@ -64,10 +71,13 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
             return (
               <button
                 key={item.id}
-                onClick={() => onNavigate(item.id)}
+                onClick={() => {
+                    console.log("Navigating to:", item.id); // للتأكد من عمل الزر
+                    onNavigate(item.id);
+                }}
                 className={`w-full flex items-center gap-3 px-4 py-3 rounded-lg text-sm font-medium transition-all duration-200 ${
                   isActive 
-                  ? 'theme-btn-primary' 
+                  ? 'theme-btn-primary shadow-xl scale-[1.02]' 
                   : 'theme-text-muted hover:bg-white/5 hover:theme-text-main'
                 }`}
               >
@@ -78,7 +88,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
         })}
       </nav>
 
-      {/* User & Settings Section */}
       <div className="p-4 border-t theme-border space-y-2">
         <button
             onClick={() => onNavigate(ViewState.PROFILE)}
@@ -114,7 +123,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ currentView, onNavigate }) => 
   );
 };
 
-// Simple Shield Icon Component
 const ShieldIcon = () => (
   <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
     <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z" />

@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { analyzeTrafficBatch } from '../services/geminiService';
-import { FileSearch, Upload, FileText, Download, CheckCircle, Brain, ShieldAlert } from 'lucide-react';
+import { FileSearch, Upload, FileText, Download, CheckCircle, Brain, ShieldAlert, Wifi, Activity } from 'lucide-react';
 import { useLanguage } from '../contexts/LanguageContext';
 import { useDashboard } from '../contexts/DashboardContext';
 import { useSession } from '../contexts/SessionContext';
@@ -67,6 +67,47 @@ export const TrafficAnalyzer: React.FC = () => {
     setTrafficInput(sample);
   };
 
+  const captureLocalTraffic = () => {
+    const resources = performance.getEntriesByType("resource");
+    const now = new Date();
+    
+    let logData = `# CAPTURED LOCAL TRAFFIC LOGS [${now.toLocaleString()}]\n`;
+    logData += `# OS: ${navigator.platform} | User-Agent: ${navigator.userAgent}\n`;
+    
+    // Add Network Info if available
+    if ((navigator as any).connection) {
+         const conn = (navigator as any).connection;
+         logData += `# Connection: ${conn.effectiveType ? conn.effectiveType.toUpperCase() : 'UNKNOWN'} | RTT: ${conn.rtt}ms | Downlink: ${conn.downlink}Mbps\n`;
+    }
+    logData += `TIMESTAMP,SOURCE,DESTINATION,TYPE,DETAILS\n`;
+
+    // Limit to last 50 entries to avoid overwhelming
+    const recentResources = resources.slice(-50);
+
+    recentResources.forEach((entry) => {
+        const res = entry as PerformanceResourceTiming;
+        let url;
+        try {
+            url = new URL(res.name);
+        } catch(e) {
+            url = { hostname: 'DATA/BLOB', pathname: res.name.substring(0, 20) };
+        }
+        
+        // Calculate approx timestamp
+        const reqTime = new Date(performance.timeOrigin + res.startTime);
+        const timestamp = reqTime.toISOString().replace('T', ' ').split('.')[0];
+        
+        logData += `${timestamp},LOCAL_BROWSER,${url.hostname},HTTPS,${res.initiatorType.toUpperCase()} Request to ${url.pathname} (${Math.round(res.duration)}ms)\n`;
+    });
+
+    // Add Simulated System Logs to make it realistic for the prototype
+    logData += `${now.toISOString().replace('T', ' ').split('.')[0]},SYSTEM,127.0.0.1,INTERNAL,System Process Active: Chrome/Edge Helper\n`;
+    logData += `${now.toISOString().replace('T', ' ').split('.')[0]},SYSTEM,127.0.0.1,INTERNAL,Localhost Listener Active (Port 3000)\n`;
+    
+    setTrafficInput(logData);
+    logAction('CAPTURE_TRAFFIC', 'Captured local device traffic');
+  };
+
   const handleDownloadPdf = () => {
     setIsDownloading(true);
     // Add small delay to allow UI to update before printing
@@ -92,19 +133,30 @@ export const TrafficAnalyzer: React.FC = () => {
       </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Input Section */}
-        <div className="theme-bg-input p-6 rounded-lg border theme-border flex flex-col h-[600px] no-print">
-          <div className="flex justify-between items-center mb-4">
+        {/* Input Section - Flexible height */}
+        <div className="theme-bg-input p-6 rounded-lg border theme-border flex flex-col h-[calc(100vh-20rem)] min-h-[500px] no-print">
+          <div className="flex justify-between items-center mb-4 flex-wrap gap-2">
             <label className="theme-text-muted font-bold text-sm flex items-center gap-2">
               <FileText size={16} />
               {t('input_logs')}
             </label>
-            <button 
-              onClick={loadSampleData}
-              className="text-xs theme-text-accent hover:underline"
-            >
-              {t('load_sample')}
-            </button>
+            <div className="flex gap-3">
+                 <button 
+                  onClick={captureLocalTraffic}
+                  className="text-xs theme-text-accent hover:underline flex items-center gap-1 font-bold"
+                  title="Capture real requests from this browser session"
+                >
+                  <Wifi size={12} />
+                  {t('capture_local')}
+                </button>
+                <button 
+                  onClick={loadSampleData}
+                  className="text-xs theme-text-muted hover:text-white hover:underline flex items-center gap-1"
+                >
+                  <Activity size={12} />
+                  {t('load_sample')}
+                </button>
+            </div>
           </div>
           
           <textarea
@@ -138,8 +190,8 @@ export const TrafficAnalyzer: React.FC = () => {
           </button>
         </div>
 
-        {/* Output Section */}
-        <div className="theme-bg-card p-6 rounded-lg border theme-border flex flex-col h-[600px] overflow-hidden relative">
+        {/* Output Section - Flexible height matching input */}
+        <div className="theme-bg-card p-6 rounded-lg border theme-border flex flex-col h-[calc(100vh-20rem)] min-h-[500px] overflow-hidden relative">
           <h3 className="text-lg font-bold theme-text-main mb-4 border-b theme-border pb-2 no-print">{t('analysis_report')}</h3>
           
           {/* Header visible ONLY in print */}
