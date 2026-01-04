@@ -1,7 +1,8 @@
+
 import React, { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import { useLanguage } from '../contexts/LanguageContext';
-import { Shield, Lock, User, AlertCircle, Loader, Globe, Clock, Cpu } from 'lucide-react';
+import { Shield, Lock, User, AlertCircle, Loader, Globe, Clock, Server, ShieldCheck } from 'lucide-react';
 
 export const Login: React.FC = () => {
   const { login } = useAuth();
@@ -13,11 +14,8 @@ export const Login: React.FC = () => {
   const [loading, setLoading] = useState(false);
   const [currentTime, setCurrentTime] = useState(new Date());
 
-  // Live Clock Effect
   useEffect(() => {
-    const timer = setInterval(() => {
-      setCurrentTime(new Date());
-    }, 1000);
+    const timer = setInterval(() => setCurrentTime(new Date()), 1000);
     return () => clearInterval(timer);
   }, []);
 
@@ -25,158 +23,135 @@ export const Login: React.FC = () => {
     e.preventDefault();
     setError('');
     setLoading(true);
-    
     try {
       const success = await login(email, password);
-      if (!success) {
-        setError(t('login_error'));
-      }
+      if (!success) setError(t('login_error'));
     } catch (err) {
-      setError('System Error');
+      setError('Connection Failure');
     } finally {
       setLoading(false);
     }
   };
 
-  const formatTime = (date: Date) => {
-    return date.toLocaleTimeString(language === 'ar' ? 'ar-EG' : 'en-US', {
-      hour: '2-digit',
-      minute: '2-digit',
-      second: '2-digit',
-      hour12: true
-    });
-  };
-
-  const formatDate = (date: Date) => {
-    return date.toLocaleDateString(language === 'ar' ? 'ar-EG' : 'en-US', {
-      weekday: 'long',
-      year: 'numeric',
-      month: 'long',
-      day: 'numeric'
-    });
-  };
-
   return (
-    <div className="min-h-screen bg-[#0b1121] text-slate-200 font-sans relative overflow-hidden flex flex-col" dir={dir}>
-      
-      {/* Background Cyber Grid Effect */}
-      <div className="absolute inset-0 z-0 opacity-20" 
-           style={{
-             backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px), radial-gradient(#3b82f6 1px, transparent 1px)',
-             backgroundSize: '40px 40px',
-             backgroundPosition: '0 0, 20px 20px'
-           }}>
+    <div className="min-h-screen bg-[#020617] text-slate-200 font-sans relative overflow-hidden flex flex-col" dir={dir}>
+      {/* Dynamic Background */}
+      <div className="absolute inset-0 z-0 overflow-hidden">
+        <div className="absolute top-[-10%] left-[-10%] w-[40%] h-[40%] bg-blue-600/10 blur-[120px] rounded-full"></div>
+        <div className="absolute bottom-[-10%] right-[-10%] w-[40%] h-[40%] bg-purple-600/10 blur-[120px] rounded-full"></div>
+        <div className="absolute inset-0 opacity-[0.03]" style={{ backgroundImage: 'radial-gradient(#3b82f6 1px, transparent 1px)', backgroundSize: '40px 40px' }}></div>
       </div>
       
-      {/* Ambient Glows */}
-      <div className="absolute top-0 left-1/4 w-96 h-96 bg-blue-600/20 rounded-full blur-[128px] pointer-events-none"></div>
-      <div className="absolute bottom-0 right-1/4 w-96 h-96 bg-purple-600/20 rounded-full blur-[128px] pointer-events-none"></div>
-
-      {/* Professional Header */}
-      <header className="relative z-10 w-full px-8 py-6 flex flex-col md:flex-row justify-between items-center border-b border-slate-800/50 bg-[#0f172a]/80 backdrop-blur-md">
-        <div className="flex items-center gap-3 mb-4 md:mb-0">
-          <div className="w-10 h-10 bg-gradient-to-br from-blue-600 to-cyan-500 rounded-lg flex items-center justify-center shadow-lg shadow-blue-500/20">
-            <Shield size={20} className="text-white" />
+      {/* Top Navbar */}
+      <header className="relative z-10 w-full px-6 md:px-12 py-6 flex justify-between items-center border-b border-white/5 bg-slate-950/20 backdrop-blur-md">
+        <div className="flex items-center gap-4">
+          <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center shadow-[0_0_20px_rgba(37,99,235,0.4)] transition-transform hover:scale-110">
+            <Shield size={22} className="text-white" />
           </div>
-          <div>
-            <h1 className="text-xl font-bold text-white tracking-wide uppercase">CyberShield AI</h1>
-            <p className="text-[10px] text-blue-400 tracking-wider">SUDAN CRITICAL INFRASTRUCTURE DEFENSE</p>
+          <div className="hidden xs:block">
+            <h1 className="text-lg font-black text-white tracking-tighter uppercase leading-none">CyberShield AI</h1>
+            <p className="text-[10px] text-blue-400 font-bold tracking-widest uppercase mt-1">Defense Infrastructure Grid</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-6 text-sm font-mono">
-           <div className="flex flex-col items-end hidden md:flex">
-             <div className="flex items-center gap-2 text-blue-300 font-bold">
+        <div className="flex items-center gap-6">
+           <div className="hidden lg:flex flex-col items-end border-r border-white/10 pr-6">
+             <div className="flex items-center gap-2 text-blue-300 font-mono text-xs font-bold">
                <Clock size={14} />
-               <span>{formatTime(currentTime)}</span>
+               <span>{currentTime.toLocaleTimeString()}</span>
              </div>
-             <span className="text-xs text-slate-500">{formatDate(currentTime)}</span>
+             <span className="text-[10px] text-slate-500 uppercase tracking-tighter">System Terminal Active</span>
            </div>
-
-           <div className="h-8 w-px bg-slate-700 hidden md:block"></div>
-
            <button 
               onClick={() => setLanguage(language === 'ar' ? 'en' : 'ar')}
-              className="flex items-center gap-2 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 border border-slate-700 rounded transition-all text-xs font-bold text-slate-300 hover:text-white"
+              className="group flex items-center gap-2 text-xs font-bold px-4 py-2 bg-white/5 hover:bg-white/10 border border-white/10 rounded-full text-slate-300 transition-all active:scale-95"
             >
-              <Globe size={14} />
+              <Globe size={14} className="group-hover:rotate-12 transition-transform" />
               {language === 'ar' ? 'English' : 'العربية'}
             </button>
         </div>
       </header>
 
       {/* Main Content Area */}
-      <main className="flex-1 relative z-10 flex items-center justify-center p-4">
-        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-2 gap-0 rounded-2xl overflow-hidden shadow-2xl border border-slate-700/50 bg-slate-800/40 backdrop-blur-xl">
+      <main className="flex-1 relative z-10 flex items-center justify-center p-4 md:p-8">
+        <div className="w-full max-w-5xl grid grid-cols-1 md:grid-cols-12 gap-0 rounded-[2rem] overflow-hidden shadow-[0_25px_50px_-12px_rgba(0,0,0,0.5)] border border-white/10 bg-slate-900/40 backdrop-blur-2xl">
           
-          {/* Left Side: Branding / Visuals */}
-          <div className="relative hidden md:flex flex-col justify-between p-12 bg-slate-900/60 border-r border-slate-700/50">
-             <div className="absolute inset-0 bg-gradient-to-b from-blue-900/10 to-slate-900/90 z-0"></div>
-             
-             <div className="relative z-10 space-y-6 mt-10">
-                <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-bold">
-                  <span className="relative flex h-2 w-2">
-                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-blue-400 opacity-75"></span>
-                    <span className="relative inline-flex rounded-full h-2 w-2 bg-blue-500"></span>
-                  </span>
-                  SYSTEM SECURE & ONLINE
+          {/* Left Panel: Visual/Status */}
+          <div className="hidden md:flex md:col-span-5 flex-col justify-between p-12 bg-gradient-to-br from-blue-600/20 to-purple-600/5 border-r border-white/5 relative group">
+             <div className="space-y-6">
+                <div className="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-[10px] font-black tracking-widest uppercase">
+                  <span className="flex h-2 w-2 rounded-full bg-blue-500 animate-pulse"></span>
+                  Security Protocol V1.0
                 </div>
-                <h2 className="text-3xl font-bold text-white leading-tight">
-                  {language === 'ar' ? 'الجيل القادم من الحماية السيبرانية' : 'Next-Gen Cyber Infrastructure Protection'}
+                <h2 className="text-4xl font-black text-white leading-[1.1] tracking-tight">
+                   The Smart Fortress of <span className="text-blue-500">Sudan</span>.
                 </h2>
-                <p className="text-slate-400 text-sm leading-relaxed max-w-sm">
-                   {language === 'ar' 
-                    ? 'نظام ذكي مدعوم بالذكاء الاصطناعي لحماية المطارات، المستشفيات، والقطاعات المصرفية في السودان من التهديدات المتقدمة.'
-                    : 'AI-powered intelligent system protecting Sudan\'s airports, hospitals, and banking sectors from advanced persistent threats.'}
+                <p className="text-slate-400 text-sm leading-relaxed max-w-xs">
+                   Advanced predictive defense grid utilizing Gemini 3 AI for infrastructure sovereignty.
                 </p>
              </div>
 
-             <div className="relative z-10 mt-12 grid grid-cols-2 gap-4">
-               <div className="p-4 rounded bg-slate-800/50 border border-slate-700/50">
-                  <Cpu className="text-blue-500 mb-2" size={20} />
-                  <div className="text-xs text-slate-500 uppercase font-bold">AI Engine</div>
-                  <div className="text-lg font-bold text-white">Active</div>
-               </div>
-               <div className="p-4 rounded bg-slate-800/50 border border-slate-700/50">
-                  <Shield className="text-purple-500 mb-2" size={20} />
-                  <div className="text-xs text-slate-500 uppercase font-bold">Firewall</div>
-                  <div className="text-lg font-bold text-white">Enhanced</div>
-               </div>
+             <div className="space-y-4">
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-black/20 border border-white/5 transition-transform hover:translate-x-2">
+                    <div className="w-10 h-10 rounded-xl bg-green-500/10 flex items-center justify-center text-green-400">
+                        <Server size={20} />
+                    </div>
+                    <div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase">Khartoum Node</div>
+                        <div className="text-xs font-bold text-white uppercase tracking-wider">Sync Stable</div>
+                    </div>
+                </div>
+                <div className="flex items-center gap-4 p-4 rounded-2xl bg-black/20 border border-white/5 transition-transform hover:translate-x-2 delay-75">
+                    <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center text-blue-400">
+                        <ShieldCheck size={20} />
+                    </div>
+                    <div>
+                        <div className="text-[10px] font-bold text-slate-500 uppercase">Firewall Core</div>
+                        <div className="text-xs font-bold text-white uppercase tracking-wider">Active Guard</div>
+                    </div>
+                </div>
              </div>
+
+             {/* Background Decoration */}
+             <div className="absolute -bottom-10 -left-10 w-40 h-40 bg-blue-500/20 blur-[60px] rounded-full group-hover:bg-blue-500/30 transition-all"></div>
           </div>
 
-          {/* Right Side: Login Form */}
-          <div className="p-8 md:p-12 flex flex-col justify-center bg-slate-900/80">
-            <div className="mb-8 text-center md:text-left">
-              <h3 className="text-2xl font-bold text-white mb-2">{t('login_title')}</h3>
-              <p className="text-slate-400 text-sm">{t('login_subtitle')}</p>
+          {/* Right Panel: Form */}
+          <div className="md:col-span-7 p-8 md:p-16 flex flex-col justify-center bg-[#0f172a]/80">
+            <div className="mb-10">
+              <h3 className="text-3xl font-black text-white mb-2 tracking-tight">{t('login_title')}</h3>
+              <p className="text-slate-400 text-sm font-medium">{t('login_subtitle')}</p>
             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
+            <form onSubmit={handleSubmit} className="space-y-6">
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block ml-1">{t('email_label')}</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{t('email_label')}</label>
                 <div className="relative group">
-                  <User className={`absolute top-3.5 text-slate-500 group-focus-within:text-blue-400 transition-colors ${dir === 'rtl' ? 'right-3' : 'left-3'}`} size={18} />
+                  <div className={`absolute top-0 bottom-0 ${dir === 'rtl' ? 'right-0 pr-4' : 'left-0 pl-4'} flex items-center text-slate-500 group-focus-within:text-blue-500 transition-colors`}>
+                    <User size={18} />
+                  </div>
                   <input 
                     type="email" 
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    className={`w-full bg-[#0b1121] border border-slate-700 rounded-lg p-3 text-white placeholder-slate-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${dir === 'rtl' ? 'pr-10' : 'pl-10'}`}
-                    placeholder="analyst@scicds.sd"
+                    className={`w-full bg-slate-950/50 border border-white/10 rounded-2xl py-4 text-sm text-white placeholder:text-slate-600 outline-none transition-all focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 ${dir === 'rtl' ? 'pr-12' : 'pl-12'}`}
+                    placeholder="operator@scicds.sd"
                     required
                   />
                 </div>
               </div>
 
               <div className="space-y-2">
-                <label className="text-xs font-bold text-slate-300 uppercase tracking-wider block ml-1">{t('password_label')}</label>
+                <label className="text-[10px] font-black text-slate-500 uppercase tracking-[0.2em] ml-1">{t('password_label')}</label>
                 <div className="relative group">
-                  <Lock className={`absolute top-3.5 text-slate-500 group-focus-within:text-blue-400 transition-colors ${dir === 'rtl' ? 'right-3' : 'left-3'}`} size={18} />
+                  <div className={`absolute top-0 bottom-0 ${dir === 'rtl' ? 'right-0 pr-4' : 'left-0 pl-4'} flex items-center text-slate-500 group-focus-within:text-blue-500 transition-colors`}>
+                    <Lock size={18} />
+                  </div>
                   <input 
                     type="password" 
                     value={password}
                     onChange={(e) => setPassword(e.target.value)}
-                    className={`w-full bg-[#0b1121] border border-slate-700 rounded-lg p-3 text-white placeholder-slate-600 focus:ring-1 focus:ring-blue-500 focus:border-blue-500 outline-none transition-all ${dir === 'rtl' ? 'pr-10' : 'pl-10'}`}
+                    className={`w-full bg-slate-950/50 border border-white/10 rounded-2xl py-4 text-sm text-white placeholder:text-slate-600 outline-none transition-all focus:border-blue-500/50 focus:ring-4 focus:ring-blue-500/5 ${dir === 'rtl' ? 'pr-12' : 'pl-12'}`}
                     placeholder="••••••••"
                     required
                   />
@@ -184,44 +159,41 @@ export const Login: React.FC = () => {
               </div>
 
               {error && (
-                <div className="bg-red-500/10 border border-red-500/20 rounded-lg p-3 flex items-start gap-3 animate-fade-in">
-                  <AlertCircle size={18} className="text-red-400 mt-0.5 shrink-0" />
-                  <span className="text-red-400 text-sm">{error}</span>
+                <div className="bg-red-500/10 border border-red-500/20 rounded-xl p-4 flex items-center gap-3 animate-shake">
+                  <AlertCircle size={18} className="text-red-500 shrink-0" />
+                  <span className="text-red-500 text-xs font-bold">{error}</span>
                 </div>
               )}
 
               <button 
                 type="submit" 
                 disabled={loading}
-                className="w-full bg-gradient-to-r from-blue-600 to-blue-700 hover:from-blue-500 hover:to-blue-600 text-white font-bold py-3.5 rounded-lg shadow-lg shadow-blue-900/20 transition-all transform hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-2 mt-4"
+                className="w-full relative overflow-hidden group bg-blue-600 hover:bg-blue-500 text-white font-black py-4 rounded-2xl text-sm transition-all shadow-[0_15px_30px_-10px_rgba(37,99,235,0.4)] hover:shadow-[0_20px_40px_-10px_rgba(37,99,235,0.6)] active:scale-[0.98] disabled:opacity-70"
               >
-                {loading ? (
-                  <>
-                    <Loader size={18} className="animate-spin" />
-                    {t('logging_in')}
-                  </>
-                ) : (
-                  <>
-                    <Lock size={18} />
-                    {t('sign_in')}
-                  </>
-                )}
+                <div className="relative z-10 flex items-center justify-center gap-3">
+                  {loading ? <Loader size={18} className="animate-spin" /> : <Shield size={18} />}
+                  {loading ? t('logging_in') : t('sign_in')}
+                </div>
+                <div className="absolute inset-0 bg-gradient-to-r from-transparent via-white/10 to-transparent -translate-x-full group-hover:translate-x-full transition-transform duration-1000"></div>
               </button>
             </form>
 
-            <div className="mt-8 pt-6 border-t border-slate-800 text-center">
-               <p className="text-[10px] text-slate-600 uppercase tracking-widest flex items-center justify-center gap-2">
-                 <Shield size={10} />
-                 {t('restricted_access')}
-               </p>
+            <div className="mt-12 pt-8 border-t border-white/5 flex flex-col sm:flex-row justify-between items-center gap-4">
+               <p className="text-[10px] text-slate-500 uppercase font-black tracking-widest">{t('restricted_access')}</p>
+               <div className="flex gap-4">
+                  <div className="w-1.5 h-1.5 rounded-full bg-blue-500"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
+                  <div className="w-1.5 h-1.5 rounded-full bg-slate-700"></div>
+               </div>
             </div>
           </div>
         </div>
       </main>
 
-      {/* Footer */}
-      <footer className="relative z-10 w-full py-4 text-center text-[10px] text-slate-600 border-t border-slate-800/50 bg-[#0f172a]/80 backdrop-blur-md">
-        © 2025 Sudan Cyber Defense Command. All rights reserved. System Ver. 1.0.4-beta
+      <footer className="relative z-10 w-full py-6 text-center border-t border-white/5 bg-slate-950/20 backdrop-blur-md">
+        <p className="text-[10px] text-slate-600 font-bold uppercase tracking-[0.4em]">
+          University of Africa - Faculty of CS - AI Research Project 2025
+        </p>
       </footer>
     </div>
   );
