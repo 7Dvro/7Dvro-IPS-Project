@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Sidebar } from './components/Sidebar';
 import { Dashboard } from './components/Dashboard';
@@ -14,9 +13,11 @@ import { Bell, Globe, Palette, X } from 'lucide-react';
 import { LanguageProvider, useLanguage } from './contexts/LanguageContext';
 import { DashboardProvider } from './contexts/DashboardContext';
 import { SessionProvider } from './contexts/SessionContext';
+// Fix: Corrected import path and resolved duplicate identifier error for AuthProvider
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { useTheme } from './contexts/ThemeContext';
 
+// Using the provided file content logic but wrapping strings in t()
 function AppContent() {
   const [currentView, setCurrentView] = useState<ViewState>(ViewState.DASHBOARD);
   const { t, language, setLanguage, dir } = useLanguage();
@@ -36,7 +37,6 @@ function AppContent() {
   }
 
   const renderContent = () => {
-    // تم تعديل المنطق هنا لضمان مطابقة دقيقة لحالة العرض
     if (currentView === ViewState.DASHBOARD) return <Dashboard systems={systems} />;
     if (currentView === ViewState.LIVE_MONITOR) return <LiveMonitor />;
     if (currentView === ViewState.TRAFFIC_ANALYSIS) return <TrafficAnalyzer />;
@@ -44,7 +44,6 @@ function AppContent() {
     if (currentView === ViewState.MALWARE_SCANNER) return <MalwareScanner />;
     if (currentView === ViewState.PROPOSAL_DOC) return <About />;
     if (currentView === ViewState.PROFILE) return <Profile />;
-    
     return <Dashboard systems={systems} />;
   };
 
@@ -92,7 +91,7 @@ function AppContent() {
                 {showThemeSelector && (
                     <div className="absolute top-12 right-0 z-50 p-4 rounded-lg theme-bg-card theme-border border shadow-2xl w-64 animate-fade-in glass-effect">
                         <div className="flex justify-between items-center mb-3">
-                            <span className="text-xs font-bold theme-text-main uppercase">Select Theme</span>
+                            <span className="text-xs font-bold theme-text-main uppercase">{t('select_theme')}</span>
                             <button onClick={() => setShowThemeSelector(false)}><X size={14} className="theme-text-muted" /></button>
                         </div>
                         <div className="grid grid-cols-3 gap-3">
@@ -116,7 +115,7 @@ function AppContent() {
               className="flex items-center gap-2 px-3 py-2 theme-bg-card rounded border theme-border hover:opacity-80 theme-text-main text-xs font-bold transition-all"
             >
               <Globe size={16} />
-              {language === 'ar' ? 'English' : 'العربية'}
+              {t('lang_toggle')}
             </button>
 
             <button className="relative p-2 theme-text-muted hover:theme-text-main transition-colors">
@@ -138,6 +137,7 @@ function AppContent() {
   );
 }
 
+// Fix: Removed duplicate import and corrected usage of context providers
 export default function App() {
   return (
     <AuthProvider>
