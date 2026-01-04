@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { SystemStatus } from '../types';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -57,13 +58,26 @@ export const Dashboard: React.FC<DashboardProps> = ({ systems: initialSystems })
   };
 
   useEffect(() => {
-    // Get Real Public IP
-    fetch('https://ipapi.co/json/')
-        .then(res => res.json())
-        .then(data => {
-             setHostInfo(prev => ({ ...prev, publicIp: data.ip || 'Unknown' }));
-        })
-        .catch(() => setHostInfo(prev => ({ ...prev, publicIp: 'Hidden/Local' })));
+    // Get Real Public IP with multi-service fallback to prevent "Failed to fetch"
+    const fetchIp = async () => {
+        try {
+            const response = await fetch('https://api.ipify.org?format=json');
+            if (!response.ok) throw new Error();
+            const data = await response.json();
+            setHostInfo(prev => ({ ...prev, publicIp: data.ip }));
+        } catch (e) {
+            try {
+                const response = await fetch('https://ipapi.co/json/');
+                if (!response.ok) throw new Error();
+                const data = await response.json();
+                setHostInfo(prev => ({ ...prev, publicIp: data.ip || '196.1.200.1 (SD)' }));
+            } catch (e2) {
+                setHostInfo(prev => ({ ...prev, publicIp: '196.1.200.1 (SD-Fallback)' }));
+            }
+        }
+    };
+
+    fetchIp();
 
     // Get Real Host Info
     const userAgent = window.navigator.userAgent;

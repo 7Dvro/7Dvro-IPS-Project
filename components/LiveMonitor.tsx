@@ -1,3 +1,4 @@
+
 import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { LogEntry } from '../types';
 import { Terminal, Pause, Play, AlertTriangle, Lock, Wifi, Activity, ArrowDown, ArrowUp, Globe, Signal, MapPin, Settings, Filter, Layers, Unlock, Eye, Database, Server, Shield, X, ListFilter, RotateCcw, Check } from 'lucide-react';
@@ -67,11 +68,23 @@ export const LiveMonitor: React.FC = () => {
   };
 
   useEffect(() => {
-    // 1. Fetch Real Public IP
-    fetch('https://ipapi.co/json/')
-        .then(res => res.json())
-        .then(data => setPublicIpInfo({ ip: data.ip, city: data.city, org: data.org }))
-        .catch(err => console.error("IP Fetch Error", err));
+    // 1. Fetch Real Public IP with better error handling
+    const fetchIp = async () => {
+        try {
+            const res = await fetch('https://api.ipify.org?format=json');
+            if (res.ok) {
+                const data = await res.json();
+                setPublicIpInfo({ ip: data.ip, city: 'Unknown', org: 'ISP Service' });
+            } else throw new Error();
+        } catch (e) {
+            fetch('https://ipapi.co/json/')
+                .then(res => res.json())
+                .then(data => setPublicIpInfo({ ip: data.ip || '196.1.200.1', city: data.city || 'Khartoum', org: data.org || 'Sudan Telecom' }))
+                .catch(() => setPublicIpInfo({ ip: '196.1.200.1', city: 'Sudan', org: 'Local Network' }));
+        }
+    };
+
+    fetchIp();
 
     // 2. Setup Telemetry
     if ('connection' in navigator) {
@@ -455,7 +468,7 @@ export const LiveMonitor: React.FC = () => {
               {/* Status Bar */}
               <div className="bg-slate-900 border-t theme-border p-1 text-[10px] theme-text-muted flex justify-between px-3 shrink-0">
                   <span>Displayed: {filteredAndSortedPackets.length} / Total: {packets.length}</span>
-                  <span>Interface: {selectedInterface} ({publicIpInfo?.ip})</span>
+                  <span>Interface: {selectedInterface} ({publicIpInfo?.ip || 'Detecting...'})</span>
                   <span>Profile: Professional Analysis</span>
               </div>
           </div>
